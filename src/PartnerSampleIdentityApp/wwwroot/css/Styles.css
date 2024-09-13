@@ -23,8 +23,29 @@ p {
     text-align: center;
 }
 
-ol {
-    text-align: center;
+.list-container {
+    text-align: center; /* Center-align the content of the container */
+}
+
+    .list-container ol {
+        display: inline-block; /* Display the list as an inline-block element */
+        text-align: left; /* Align the text of list items to the left */
+        padding-left: 20px; /* Adjust padding to ensure numbers/bullets are visible */
+        margin: 0; /* Reset default margin */
+    }
+
+        .list-container ol li {
+            text-align: left; /* Ensure list items' text is left-aligned */
+            margin-bottom: 5px; /* Add space between list items */
+        }
+
+ul, ol {
+    text-align: left; /* Align the text of list items to the left */
+}
+
+/* Style for list items */
+li {
+    margin-bottom: 5px; /* Adds some space between list items */
 }
 
 input[type="text"] {
