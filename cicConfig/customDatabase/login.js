@@ -35,7 +35,8 @@ function login(usernameOrMileage, password, callback) {
       var personId = accountStuff["ID"];
       callback(null, {
         user_id: "aea3cfe6-35b3-4738-a311-42dc88539a58",
-        username: username,
+        username: usernameOrMileage,
+        realUsername: username,
         firstName: firstName,
         lastName: lastName,
         mileagePlanNumber: mileagePlanNumber
