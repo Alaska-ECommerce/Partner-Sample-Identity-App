@@ -24,22 +24,26 @@ function login(usernameOrMileage, password, callback) {
       // parse the response and extract the cookies
       const cookies = getCookiesFromResponse(response);
   
-      var userStuff = querystring.parse(cookies["AS%5FNAME"]);
-      var accountStuff = querystring.parse(cookies["AS%5FACNT"]);
+      var asNameCookie = querystring.parse(cookies["AS%5FNAME"]);
+      var asAcntCookie = querystring.parse(cookies["AS%5FACNT"]);
   
       // Get the user id, username, nickname, email address from the cookies
-      var username = userStuff["UID"];
-      var firstName = userStuff["FN"];
-      var lastName = userStuff["LN"];
-      var mileagePlanNumber = userStuff["MP"];
-      var personId = accountStuff["ID"];
+      var username = asNameCookie["UID"];
+      var firstName = asNameCookie["FN"];
+      var lastName = asNameCookie["LN"];
+      var mileagePlanNumber = asNameCookie["MP"];
+      var personId = asAcntCookie["ID"];
       callback(null, {
-        user_id: "aea3cfe6-35b3-4738-a311-42dc88539a58",
+        user_id: personId,
         username: usernameOrMileage,
         realUsername: username,
         firstName: firstName,
         lastName: lastName,
-        mileagePlanNumber: mileagePlanNumber
+        mileagePlanNumber: mileagePlanNumber,
+        otherCookieData: {
+          'AS_NAME': asNameCookie,
+          'AS_ACNT': asAcntCookie
+        }
       });
     });
   
