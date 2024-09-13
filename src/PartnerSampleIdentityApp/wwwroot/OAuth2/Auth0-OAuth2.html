@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Auth0 Auth JS - Redirect</title>
+    <!-- Auth0 SPA SDK from CDN -->
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/1.13/auth0-spa-js.production.js"></script>
+    <script type="text/javascript">
+        // Update these for your Auth0 tenant
+        const domain = "alaska-poc.cic-demo-platform.auth0app.com"; // e.g., your-tenant.auth0.com
+        const clientId = "DPHf8btcMeuYWFVSWnZIh0Q41gryQmQG"; // e.g., eyJvYXV0aDJDbGllbnRJZCI6I...
+
+        let auth0 = null;
+
+        // Bootstrap the Auth0 Client
+        const initializeAuth0Client = async () => {
+            auth0 = await createAuth0Client({
+                domain: domain,
+                client_id: clientId,
+                redirect_uri: window.location.href,
+                scope: 'openid profile email'
+            });
+
+            // Handle authentication callback
+            if (window.location.search.includes("code=") && window.location.search.includes("state=")) {
+                await auth0.handleRedirectCallback();
+                window.history.replaceState({}, document.title, "/");
+            }
+
+            updateUI();
+        };
+
+        const login = async () => {
+            await auth0.loginWithRedirect();
+        };
+
+        const logout = () => {
+            auth0.logout({
+                returnTo: window.location.href
+            });
+        };
+
+        const updateUI = async () => {
+            const isAuthenticated = await auth0.isAuthenticated();
+            const userData = document.getElementById('content-jwt');
+
+            if (isAuthenticated) {
+                const user = await auth0.getUser();
+                userData.textContent = JSON.stringify(user, null, 2);
+            } else {
+                userData.textContent = 'User not authenticated';
+            }
+        };
+
+        window.onload = () => {
+            initializeAuth0Client();
+        };
+    </script>
+</head>
+<body>
+    <h1>Alaska Airlines</h1>
+    <h2>Partner Authentication Example - Auth0 OAuth2</h2>
+    <hr />
+    <div id="content-jwt">
+        <h3>User Details</h3>
+    </div>
+    <hr />
+    <div id="uxActiveOptions">
+        <b>Functions:</b>
+        <p><button onclick="login();">Login with Auth0</button></p>
+        <p><button onclick="logout();">Logout</button></p>
+    </div>
+</body>
+</html>

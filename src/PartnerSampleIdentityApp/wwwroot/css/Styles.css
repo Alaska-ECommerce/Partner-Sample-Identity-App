@@ -26,3 +26,36 @@ p {
 ol {
     text-align: center;
 }
+
+input[type="text"] {
+    width: 100%; /* Makes the input take the full width of its container */
+    padding: 10px; /* Adds some padding inside the input field */
+    margin: 8px 0; /* Adds some space above and below the input field */
+    display: inline-block; /* Ensures the input behaves like a block but fits inline */
+    border: 1px solid #ccc; /* Adds a border around the input field */
+    border-radius: 4px; /* Rounds the corners of the input field */
+    box-sizing: border-box; /* Ensures padding does not increase the total width */
+    font-size: 16px; /* Increases the font size for better readability */
+}
+
+/* Style for the container to control the max width */
+.input-container {
+    max-width: 500px; /* Sets a max-width for the container to avoid overly wide fields on large screens */
+    margin: auto; /* Centers the container */
+}
+
+button {
+    width: 100%; /* Make the button take the full width of its container */
+    padding: 14px 20px; /* Adds some padding inside the button */
+    margin: 8px 0; /* Adds some space above and below the button */
+    border: none; /* Removes the default border */
+    border-radius: 4px; /* Rounds the corners of the button */
+    background-color: #4CAF50; /* Adds a background color to the button */
+    color: white; /* Changes the text color to white */
+    cursor: pointer; /* Changes the cursor to a pointer when hovering over the button */
+    font-size: 16px; /* Increases the font size for better readability */
+}
+
+    button:hover {
+        background-color: #45a049; /* Darkens the button slightly when hovering */
+    }
