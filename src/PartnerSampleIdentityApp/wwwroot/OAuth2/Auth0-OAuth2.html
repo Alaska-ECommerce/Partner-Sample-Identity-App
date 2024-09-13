@@ -8,17 +8,26 @@
     <link rel="stylesheet" href="/css/Styles.css" />
     <script type="text/javascript">
         // Update these for your Auth0 tenant
-        const domain = "alaska-poc.cic-demo-platform.auth0app.com"; // e.g., your-tenant.auth0.com
-        const clientId = "DPHf8btcMeuYWFVSWnZIh0Q41gryQmQG"; // e.g., eyJvYXV0aDJDbGllbnRJZCI6I...
+        let initDomain = "alaska-poc.cic-demo-platform.auth0app.com"; // e.g., your-tenant.auth0.com
+        let initClientId = "DPHf8btcMeuYWFVSWnZIh0Q41gryQmQG"; // e.g., eyJvYXV0aDJDbGllbnRJZCI6I...
+        let initRedirectUri = window.location.href;
 
         let auth0 = null;
 
+        window.onload = async () => {
+            document.getElementById("oauthDomain").setAttribute("value", initDomain);
+            document.getElementById("oauthClientId").setAttribute("value", initClientId);
+            document.getElementById("oauthRedirectUrl").setAttribute("value", initRedirectUri);
+
+            await initializeAuth0Client(initDomain, initClientId, initRedirectUri);
+        };
+
         // Bootstrap the Auth0 Client
-        const initializeAuth0Client = async () => {
+        const initializeAuth0Client = async (domain, clientId, redirectUri) => {
             auth0 = await createAuth0Client({
                 domain: domain,
                 client_id: clientId,
-                redirect_uri: window.location.href,
+                redirect_uri: redirectUri,
                 scope: 'openid profile email'
             });
 
@@ -28,10 +37,16 @@
                 window.history.replaceState({}, document.title, "/");
             }
 
-            updateUI();
+            await updateUI();
         };
 
         const login = async () => {
+            let newDomain = document.getElementById("oauthDomain").value;
+            let newClientId = document.getElementById("oauthClientId").value;
+            let newRedirectUri = document.getElementById("oauthRedirectUrl").value;
+
+            await initializeAuth0Client(newDomain, newClientId, newRedirectUri);
+
             await auth0.loginWithRedirect();
         };
 
@@ -52,10 +67,6 @@
                 userData.textContent = 'User not authenticated';
             }
         };
-
-        window.onload = () => {
-            initializeAuth0Client();
-        };
     </script>
 </head>
 <body>
@@ -67,9 +78,42 @@
     </div>
     <hr />
     <div id="uxActiveOptions">
-        <b>Functions:</b>
-        <p><button onclick="login();">Login with Auth0</button></p>
-        <p><button onclick="logout();">Logout</button></p>
+        <form id="oauthConfigForm">
+            <label for="oauthDomain">Enter OAuth domain URL:</label>
+            <input
+                    type="text"
+                    id="oauthDomain"
+                    name="oauthDomain"
+                    required=""
+                    value=""
+                    size="50"
+            />
+            <br />
+            <label for="oauthClientId">Enter OAuth client ID:</label>
+            <input
+                    type="text"
+                    id="oauthClientId"
+                    name="oauthClientId"
+                    required=""
+                    value=""
+                    size="32"
+            />
+            <br />
+            <label for="oauthRedirectUrl">Enter OAuth redirect URL:</label>
+            <input
+                    type="text"
+                    id="oauthRedirectUrl"
+                    name="oauthRedirectUrl"
+                    required=""
+                    value=""
+                    size="50"
+            />
+            <br />
+
+            <b>Functions:</b>
+            <p><button onclick="login();">Login with Auth0</button></p>
+            <p><button onclick="logout();">Logout</button></p>
+        </form>
     </div>
 </body>
 </html>
