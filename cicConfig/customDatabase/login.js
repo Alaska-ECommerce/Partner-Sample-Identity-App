@@ -40,10 +40,10 @@ function login(usernameOrMileage, password, callback) {
         firstName: firstName,
         lastName: lastName,
         mileagePlanNumber: mileagePlanNumber,
-        otherCookieData: {
+        otherCookieData: JSON.stringify({
           'AS_NAME': asNameCookie,
           'AS_ACNT': asAcntCookie
-        }
+        })
       });
     });
   
