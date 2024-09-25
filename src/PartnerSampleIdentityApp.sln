@@ -7,6 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PartnerSampleIdentityApp", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Files", "Solution Files", "{0E0AE72C-C0A8-4CB1-9EA9-A41C5952B9F3}"
 	ProjectSection(SolutionItems) = preProject
+		..\Guest Authentication Through Our New Partners.docx = ..\Guest Authentication Through Our New Partners.docx
 		..\Guest Authentication Through Our Partners.docx = ..\Guest Authentication Through Our Partners.docx
 		..\README.md = ..\README.md
 	EndProjectSection
@@ -27,7 +28,5 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {34383573-93FE-43FA-9FFA-43BF0D874921}
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 EndGlobal

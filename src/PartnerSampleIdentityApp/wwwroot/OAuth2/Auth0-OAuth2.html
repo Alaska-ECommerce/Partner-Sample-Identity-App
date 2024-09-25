@@ -34,7 +34,6 @@
             // Handle authentication callback
             if (window.location.search.includes("code=") && window.location.search.includes("state=")) {
                 await auth0.handleRedirectCallback();
-                window.history.replaceState({}, document.title, "/");
             }
 
             await updateUI();
