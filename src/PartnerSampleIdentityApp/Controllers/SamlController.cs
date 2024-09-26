@@ -19,12 +19,13 @@ public class SamlController : ControllerBase
     }
 
     [HttpPost("Consume")]
-    public IActionResult Consume([FromForm] string samlResponse)
+    public IActionResult Consume([FromForm] string samlResponse, [FromForm] string? relayState = null)
     {
         var decodedResponseXml = Encoding.UTF8.GetString(Convert.FromBase64String(samlResponse));
         var xml = new Xml(decodedResponseXml);
-        var relayState = GetValue(decodedResponseXml, "relay_state");
-        if (!string.IsNullOrEmpty(relayState))
+        if (string.IsNullOrWhiteSpace(relayState))
+            relayState = GetValue(decodedResponseXml, "RelayState") ?? "/";
+        if (!string.IsNullOrEmpty(relayState) && relayState != "/")
         {
             // Normally the relay state would NOT be a Url, it would be some other value
             // that the app would use to determine where to redirect.
