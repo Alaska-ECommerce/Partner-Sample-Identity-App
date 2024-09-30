@@ -12,24 +12,29 @@
         let initRedirectUri = window.location.href;
 
         window.onload = () => {
-            document.getElementById("samlDomain").setAttribute("value", initDomain);
-            document.getElementById("samlClientId").setAttribute("value", initClientId);
-            document.getElementById("samlRedirectUrl").setAttribute("value", initRedirectUri);
-            document.getElementById("samlActionUrl").setAttribute("value", initActionUrl);
-            `${actionUrl}${clientId}`
+            document.getElementById("samlDomain").value = initDomain;
+            document.getElementById("samlClientId").value = initClientId;
+            document.getElementById("samlRedirectUrl").value = initRedirectUri;
+            document.getElementById("samlActionUrl").value = initActionUrl;
+
+            // Add event listener to update action URL when client ID changes
+            document.getElementById("samlClientId").addEventListener("input", updateActionUrl);
+        };
+
+        const updateActionUrl = () => {
+            let domain = document.getElementById("samlDomain").value;
+            let clientId = document.getElementById("samlClientId").value;
+            let newActionUrl = `https://${domain}/samlp/${clientId}`;
+            document.getElementById("samlActionUrl").value = newActionUrl;
         };
 
         const login = () => {
             let actionUrl = document.getElementById("samlActionUrl").value;
-            let domain = document.getElementById("samlDomain").value;
-            let clientId = document.getElementById("samlClientId").value;
-            let redirectUri = document.getElementById("samlRedirectUrl").value;
             let relayState = document.getElementById("samlRelayState").value;
 
-            let fullActionUrl = `${actionUrl}${clientId}`;
             let form = document.createElement('form');
             form.method = 'POST';
-            form.action = fullActionUrl;
+            form.action = actionUrl;
 
             let relayStateInput = document.createElement('input');
             relayStateInput.type = 'hidden';
@@ -69,7 +74,6 @@
                    id="samlDomain"
                    name="samlDomain"
                    required=""
-                   value=""
                    size="50" />
             <br />
             <label for="samlClientId">Enter SAML client ID:</label>
@@ -77,7 +81,6 @@
                    id="samlClientId"
                    name="samlClientId"
                    required=""
-                   value=""
                    size="32" />
             <br />
             <label for="samlActionUrl">Enter SAML action URL:</label>
@@ -85,7 +88,6 @@
                    id="samlActionUrl"
                    name="samlActionUrl"
                    required=""
-                   value=""
                    size="50" />
             <br />
             <label for="samlRedirectUrl">Enter SAML redirect URL:</label>
@@ -93,7 +95,6 @@
                    id="samlRedirectUrl"
                    name="samlRedirectUrl"
                    required=""
-                   value=""
                    size="50" />
             <br />
             <label for="samlRelayState">Enter Relay State:</label>
