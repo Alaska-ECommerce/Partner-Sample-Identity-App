@@ -25,6 +25,8 @@ public class SamlController : ControllerBase
         var xml = new Xml(decodedResponseXml);
         if (string.IsNullOrWhiteSpace(relayState))
             relayState = GetValue(decodedResponseXml, "RelayState") ?? "/";
+        var issuer = GetIssuer(decodedResponseXml).Substring(4);
+        var clientId = GetValue(decodedResponseXml, "clientID");
         if (!string.IsNullOrEmpty(relayState) && relayState != "/")
         {
             // Normally the relay state would NOT be a Url, it would be some other value
@@ -36,7 +38,7 @@ public class SamlController : ControllerBase
         {
 
             _httpContextAccessor.HttpContext!.Request.Query.TryGetValue("Partner", out StringValues partner);
-            var html = string.Format(HtmlForXml, partner, SecurityElement.Escape(xml.PrettyXml));
+            var html = string.Format(HtmlForXml, issuer, clientId, partner, SecurityElement.Escape(xml.PrettyXml));
             return Content(html, "text/html", Encoding.UTF8);
         }
     }
@@ -48,6 +50,14 @@ public class SamlController : ControllerBase
 <meta charset=""UTF-8"">
 <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
 <title>Display XML</title>
+<link rel=""stylesheet"" href=""/css/Styles.css"" />
+    <script type=""text/javascript"">
+        const logout = () => {{
+            let postLogoutRedirectUrl = encodeURIComponent('https://localhost:7271/SAML/OktaSaml.html?logout=true');
+            let redirectUrl = `https://{0}/oidc/logout?client_id={1}&post_logout_redirect_uri=${{postLogoutRedirectUrl}}`
+            window.location.href = redirectUrl;
+        }};
+    </script>
 <style>
     .xml-box {{
         border: 1px solid #888; /* Gray border */
@@ -61,14 +71,14 @@ public class SamlController : ControllerBase
 </style>
 </head>
 <body>
-<h1>Partner: {0}</h1>
+<h1>Partner: {2}</h1>
 <h2>SAML Token</h2>
 
 <!-- The XML content -->
 <pre class=""xml-box"">
-{1}
+{3}
 </pre>
-
+<p><button type=""button"" onclick=""logout();"">Logout</button></p>
 </body>
 </html>";
 
@@ -100,6 +110,21 @@ public class SamlController : ControllerBase
 
         // XPath query to find the Attribute node for loginState
         var loginStateNode = xmlDoc.SelectSingleNode($"//saml:Attribute[@Name='http://schemas.auth0.com/{attributeName}']/saml:AttributeValue", nsmgr);
+
+        return loginStateNode?.InnerText;
+    }
+
+    public string? GetIssuer(string samlToken)
+    {
+        var xmlDoc = new XmlDocument();
+        xmlDoc.LoadXml(samlToken);
+        // Create a namespace manager to handle the namespaces in the SAML token.
+        var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+        nsmgr.AddNamespace("saml", "urn:oasis:names:tc:SAML:2.0:assertion");
+        nsmgr.AddNamespace("samlp", "urn:oasis:names:tc:SAML:2.0:protocol");
+
+        // XPath query to find the Attribute node for loginState
+        var loginStateNode = xmlDoc.SelectSingleNode($"//saml:Issuer", nsmgr);
 
         return loginStateNode?.InnerText;
     }

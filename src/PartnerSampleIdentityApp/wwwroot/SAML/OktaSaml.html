@@ -46,9 +46,13 @@
             form.submit();
         };
 
-        const logout = () => {
-            // Implement logout functionality if needed
-            alert('Logout functionality not implemented');
+      const logout = () => {
+            // This actually uses OIDC url to logout, even though it is SAML.
+            let domain = document.getElementById("samlDomain").value;
+            let clientId = document.getElementById("samlClientId").value;
+            let postLogoutRedirectUrl = encodeURIComponent('https://localhost:7271/SAML/OktaSaml.html?logout=true');
+            let redirectUrl = `https://${domain}/oidc/logout?client_id=${clientId}&post_logout_redirect_uri=${postLogoutRedirectUrl}`
+            window.location.href = redirectUrl;
         };
 
         const updateUI = () => {
