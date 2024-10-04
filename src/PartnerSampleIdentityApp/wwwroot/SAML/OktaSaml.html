@@ -6,10 +6,10 @@
     <link rel="stylesheet" href="/css/Styles.css" />
     <script type="text/javascript">
         // Update these for your SAML configuration
-        let initDomain = "alaskaqa.us.auth0.com";
-        let initClientId = "Z44PoNZwqGlkByWjEZA5wXfYa1yiAZOZ";
-        let initActionUrl = `https://${initDomain}/samlp/${initClientId}`;
-        let initRedirectUri = window.location.href;
+        const initDomain = "alaskaqa.us.auth0.com";
+        const initClientId = "Z44PoNZwqGlkByWjEZA5wXfYa1yiAZOZ";
+        const initActionUrl = `https://${initDomain}/samlp/${initClientId}`;
+        const initRedirectUri = window.location.href;
 
         window.onload = () => {
             document.getElementById("samlDomain").value = initDomain;
@@ -22,21 +22,21 @@
         };
 
         const updateActionUrl = () => {
-            let domain = document.getElementById("samlDomain").value;
-            let clientId = document.getElementById("samlClientId").value;
-            let newActionUrl = `https://${domain}/samlp/${clientId}`;
+            const domain = document.getElementById("samlDomain").value;
+            const clientId = document.getElementById("samlClientId").value;
+            const newActionUrl = `https://${domain}/samlp/${clientId}`;
             document.getElementById("samlActionUrl").value = newActionUrl;
         };
 
         const login = () => {
-            let actionUrl = document.getElementById("samlActionUrl").value;
-            let relayState = document.getElementById("samlRelayState").value;
+            const actionUrl = document.getElementById("samlActionUrl").value;
+            const relayState = document.getElementById("samlRelayState").value;
 
-            let form = document.createElement('form');
+            const form = document.createElement('form');
             form.method = 'POST';
             form.action = actionUrl;
 
-            let relayStateInput = document.createElement('input');
+            const relayStateInput = document.createElement('input');
             relayStateInput.type = 'hidden';
             relayStateInput.name = 'RelayState';
             relayStateInput.value = relayState;
