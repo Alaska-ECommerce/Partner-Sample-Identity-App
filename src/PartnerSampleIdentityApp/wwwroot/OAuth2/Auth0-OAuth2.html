@@ -12,8 +12,9 @@
     let initClientIdQa = "Z44PoNZwqGlkByWjEZA5wXfYa1yiAZOZ";
     let initDomainTest = "alaska-poc.cic-demo-platform.auth0app.com";
     let initClientIdTest = "h0AYVNrdo1TBx4xS2FO1geKZ90iCDhOF";
-    let initDomain = initDomainTest;
-    let initClientId = initClientIdTest;
+
+    let initDomain = initDomainQa;
+    let initClientId = initClientIdQa;
     const currentUrl = new URL(window.location.href);
     const urlWithoutParameters = currentUrl.origin + currentUrl.pathname;
     let initRedirectUri = urlWithoutParameters;
@@ -42,16 +43,23 @@
       auth0client = await auth0.createAuth0Client(config);
 
       if (window.location.search.includes("code=") && window.location.search.includes("state=")) {
-        await auth0client.handleRedirectCallback();
+        var result = await auth0client.handleRedirectCallback();
+        var appState = result.appState;
+        document.getElementById("returnedAppState").value = appState;
       }
 
       await updateUI();
     };
 
     const login = async () => {
+      var redirectUri = document.getElementById("oauthRedirectUrl").value;
+      // Retrieve the OAuth state JSON from the input field
+      var myAppState = document.getElementById("appState").value;
       const options = {
         authorizationParams: {
-          redirect_uri: document.getElementById("oauthRedirectUrl").value
+          redirect_uri: redirectUri,
+          // Use the base64 encoded state
+          appState: myAppState
         }
       };
       await initializeAuth0Client(initDomain, initClientId, initRedirectUri);
@@ -66,21 +74,54 @@
       window.location.href = logoutUrl;
     };
 
+    const loginToAlaskaAir = async () => {
+      var local = "https://localhost:7271/eki/signing/cookies";
+      var testurl = "https://platform-test-fd.azurefd.net/account/session/eki/signing/cookies";
+      var qaurl = "https://platform-qa-fd.azurefd.net/account/session/eki/signing/cookies";
+      var produrl = "https://www.alaskaair.com/account/session/eki/signing/cookies";
+
+      let actionUrl = local;
+
+      let form = document.createElement('form');
+      form.method = 'POST';
+      form.action = actionUrl;
+
+      const token = await auth0client.getTokenSilently();
+      let tokenStateInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'token';
+      tokenInput.value = token;
+      form.appendChild(tokenInput);
+      let returnUrlInput = document.createElement('input');
+      returnUrlInput.type = 'hidden';
+      returnUrlInput.name = 'returnUrl';
+      returnUrlInput.value = window.location.href;
+      form.appendChild(returnUrlInput);
+      document.body.appendChild(form);
+      form.submit();
+    };
+
     const updateUI = async () => {
       const isAuthenticated = await auth0client.isAuthenticated();
       const userData = document.getElementById('content-jwt');
       const loginButton = document.getElementById('loginButton');
       const logoutButton = document.getElementById('logoutButton');
+      const loginToAlaskaAirDiv = document.getElementById('loginToAlaskaAir-div');
+      const returnedAppStateDiv = document.getElementById('returnedAppState-div');
 
       if (isAuthenticated) {
         const user = await auth0client.getUser();
         userData.textContent = JSON.stringify(user, null, 2);
         loginButton.style.display = 'none';
         logoutButton.style.display = 'block';
+        loginToAlaskaAirDiv.style.display = 'block';
+        returnedAppStateDiv.style.display = 'block';
       } else {
         userData.textContent = 'User not authenticated';
         loginButton.style.display = 'block';
         logoutButton.style.display = 'none';
+        loginToAlaskaAirDiv.style.display = 'none';
+        returnedAppStateDiv.style.display = 'none';
       }
     };
   </script>
@@ -119,10 +160,30 @@
              value=""
              size="50" />
       <br />
+      <label for="samlRelayState">Enter App State:</label>
+      <input type="text"
+             id="appState"
+             name="appState"
+             placeholder='Some App State.'
 
+             size="50" />
+      <p>App State is not the same as state. AppState doesn't leave the browser.'</p>
+      <br />
+      <div id="returnedAppState-div">
+        <label for="samlRelayState">The Returned App State:</label>
+        <input type="text"
+               id="returnedAppState"
+               name="returnedAppState"
+               size="50"
+               readonly="readonly" />
+      </div>
       <b>Functions:</b>
       <p><button type="button" id="loginButton" onclick="login();">Login with Auth0</button></p>
       <p><button type="button" id="logoutButton" onclick="logout();">Logout</button></p>
+      <div id="loginToAlaskaAir-div">
+        <p>www.alaskaair.com still uses login cookies. Guests are logged in with a token, but not with the cookies. Click below</p>
+        <p><button type="button" id="loginToAlaskaAirButton" onclick="loginToAlaskaAir();">Login to www.AlaskaAir.com</button></p>
+      </div>
     </form>
 
   </div>
