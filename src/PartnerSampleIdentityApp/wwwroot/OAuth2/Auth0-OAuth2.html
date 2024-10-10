@@ -26,7 +26,7 @@
       document.getElementById("oauthClientId").setAttribute("value", initClientId);
       document.getElementById("oauthRedirectUrl").setAttribute("value", initRedirectUri);
 
-      await initializeAuth0Client(initDomain, initClientId, initRedirectUri);
+      await initializeAuth0Client();
     };
 
     const initializeAuth0Client = async () => {
@@ -43,9 +43,13 @@
       auth0client = await auth0.createAuth0Client(config);
 
       if (window.location.search.includes("code=") && window.location.search.includes("state=")) {
-        var result = await auth0client.handleRedirectCallback();
-        var appState = result.appState;
-        document.getElementById("returnedAppState").value = appState;
+        try {
+          var result = await auth0client.handleRedirectCallback();
+          var appState = result.appState || 'No appState returned';
+          document.getElementById("returnedAppState").value = appState;
+        } catch (error) {
+          console.error("Error handling redirect callback", error);
+        }
       }
 
       await updateUI();
@@ -56,13 +60,12 @@
       // Retrieve the OAuth state JSON from the input field
       var myAppState = document.getElementById("appState").value;
       const options = {
+        appState: myAppState,
         authorizationParams: {
-          redirect_uri: redirectUri,
-          // Use the base64 encoded state
-          appState: myAppState
+          redirect_uri: redirectUri
         }
       };
-      await initializeAuth0Client(initDomain, initClientId, initRedirectUri);
+      await initializeAuth0Client();
       await auth0client.loginWithRedirect(options);
     };
 
@@ -75,16 +78,15 @@
     };
 
     const loginToAlaskaAir = async () => {
-
       var route = "eki/signin/bytoken";
-      // The host and path for the different environments
+      // The host and path for Session in the different environments.
       var local = "https://localhost:7271";
       var testurl = "https://platform-test-fd.azurefd.net/account/session";
       var qaurl = "https://platform-qa-fd.azurefd.net/account/session";
       var produrl = "https://www.alaskaair.com/account/session";
 
       // Change the first part of the URL to the appropriate environment
-      let actionUrl = `${local}/${route}`;
+      let actionUrl = `${qaurl}/${route}`;
 
       let form = document.createElement('form');
       form.method = 'POST';
@@ -103,19 +105,18 @@
         console.error("Error getting the ID token", error);
       }
 
-      let tokenInput = document.createElement('input');
-      tokenInput.type = 'hidden';
-      tokenInput.name = 'token';
-      tokenInput.value = idToken;
-      form.appendChild(tokenInput);
-      let returnUrlInput = document.createElement('input');
-      returnUrlInput.type = 'hidden';
-      returnUrlInput.name = 'returnUrl';
-      returnUrlInput.value = window.location.href;
-      form.appendChild(returnUrlInput);
-      document.body.appendChild(form);
+      form.appendChild(createInput('hidden', 'token', token, form));
+      form.appendChild(createInput('hidden', 'returnUrl', window.location.href, form));
       form.submit();
     };
+
+    const createInput = async (type, name, value, form) => {
+      let input = document.createElement('input');
+      input.type = type;
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    }
 
     const updateUI = async () => {
       const isAuthenticated = await auth0client.isAuthenticated();
@@ -182,7 +183,7 @@
              name="appState"
              placeholder='Some App State.'
              size="50" />
-      <p>App State is not the same as state. AppState doesn't leave the browser.'</p>
+      <p>App State is not the same as state. AppState doesn't leave the browser.</p>
       <br />
       <div id="returnedAppState-div">
         <label for="samlRelayState">The Returned App State:</label>
