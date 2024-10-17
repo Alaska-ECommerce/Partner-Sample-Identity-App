@@ -8,11 +8,14 @@
         // Update these for your SAML configuration
         let initDomainQa = "alaskaqa.us.auth0.com";
         let initClientIdQa = "Z44PoNZwqGlkByWjEZA5wXfYa1yiAZOZ";
-        let initDomainTest = "alaska-poc.cic-demo-platform.auth0app.com";
-        let initClientIdTest = "h0AYVNrdo1TBx4xS2FO1geKZ90iCDhOF";
+
+        let initDomainTest = "alaskatest.us.auth0.com";
+        let initClientIdTest = "MvnAHImPPNtD4aB5dYRLFnSMQKzkdhFl";
+
         let initDomain = initDomainQa;
         let initClientId = initClientIdQa;
-        const initActionUrl = `https://${initDomain}/samlp/${initClientId}`;
+
+S        const initActionUrl = `https://${initDomain}/samlp/${initClientId}`;
         const initRedirectUri = window.location.href;
 
         window.onload = () => {
