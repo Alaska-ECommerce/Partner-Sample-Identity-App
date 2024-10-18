@@ -109,7 +109,7 @@ public class SamlController : ControllerBase
         nsmgr.AddNamespace("samlp", "urn:oasis:names:tc:SAML:2.0:protocol");
 
         // XPath query to find the Attribute node for loginState
-        var loginStateNode = xmlDoc.SelectSingleNode($"//saml:Attribute[@Name='http://schemas.auth0.com/{attributeName}']/saml:AttributeValue", nsmgr);
+        var loginStateNode = xmlDoc.SelectSingleNode($"//saml:Attribute[@Name='{attributeName}']/saml:AttributeValue", nsmgr);
 
         return loginStateNode?.InnerText;
     }
