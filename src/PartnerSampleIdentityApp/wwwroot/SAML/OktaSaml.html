@@ -6,7 +6,10 @@
     <link rel="stylesheet" href="/css/Styles.css" />
     <script type="text/javascript">
         // Update these for your SAML configuration
-        let initDomainQa = "auth0-qa.alaskaair.com";
+        let initDomainProd = "alaskaair.auth0.com";
+        let initClientIdProd = "YdmrhDsA5Q4yQwWUE9oIn5DAFKQajVF2";
+
+        let initDomainQa = "alaskaqa.us.auth0.com";
         let initClientIdQa = "Z44PoNZwqGlkByWjEZA5wXfYa1yiAZOZ";
 
         let initDomainTest = "auth0-test.alaskaair.com";
@@ -25,6 +28,7 @@
             document.getElementById("samlActionUrl").value = initActionUrl;
 
             // Add event listener to update action URL when client ID changes
+            document.getElementById("samlDomain").addEventListener("input", updateActionUrl);
             document.getElementById("samlClientId").addEventListener("input", updateActionUrl);
         };
 
