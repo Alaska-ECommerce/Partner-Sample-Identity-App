@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="SamlDecryptor.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Rhyous.EasyXml" Version="1.3.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>

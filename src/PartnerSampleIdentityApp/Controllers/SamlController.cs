@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
+using PartnerSampleIdentityApp;
 using Rhyous.EasyXml;
+using Session.Crypto;
 using System.Security;
 using System.Text;
 using System.Xml;
@@ -22,11 +24,24 @@ public class SamlController : ControllerBase
     public IActionResult Consume([FromForm] string samlResponse, [FromForm] string? relayState = null)
     {
         var decodedResponseXml = Encoding.UTF8.GetString(Convert.FromBase64String(samlResponse));
-        var xml = new Xml(decodedResponseXml);
+        var plainTextSaml = string.Empty;
+        if (decodedResponseXml.Contains("xenc:CipherValue"))
+        {
+            var samlDecryptor = new SamlDecryptor(Data.PrivateKey);
+            var decryptedXml = samlDecryptor.DecryptSamlAsync(decodedResponseXml).Result;
+            //plainTextSaml = Encoding.UTF8.GetString(decryptedXml);
+            plainTextSaml = decryptedXml;
+        }
+        else
+        {
+            plainTextSaml = Encoding.UTF8.GetString(Convert.FromBase64String(samlResponse));
+        }
+
+        var xml = new Xml(plainTextSaml);
         if (string.IsNullOrWhiteSpace(relayState))
-            relayState = GetValue(decodedResponseXml, "RelayState") ?? "/";
-        var issuer = GetIssuer(decodedResponseXml).Substring(4);
-        var clientId = GetValue(decodedResponseXml, "clientID");
+            relayState = GetValue(plainTextSaml, "RelayState") ?? "/";
+        var issuer = GetIssuer(plainTextSaml).Substring(4);
+        var clientId = GetValue(plainTextSaml, "clientID");
         if (!string.IsNullOrEmpty(relayState) && relayState != "/")
         {
             // Normally the relay state would NOT be a Url, it would be some other value
