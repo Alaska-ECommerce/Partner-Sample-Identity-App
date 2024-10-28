@@ -146,64 +146,72 @@
     </script>
 </head>
 <body>
-    <h1>Alaska Airlines</h1>
-    <h2>Partner Authentication Example - Auth0 OAuth2</h2>
-    <hr />
-    <div>
-        <pre id="content-jwt" align="left">User Details will populate here after login</pre>
+  <div class="flex-container">
+    <div class="left">
+      <a href="/">Home</a>
+      <a href="/SAML/OktaSaml.html">Saml Login</a>
+      <a href="/OAuth2/Auth0-OAuth2.html">OAuth2 Login</a>
     </div>
-    <hr />
-    <div id="uxActiveOptions">
-        <form id="oauthConfigForm">
-            <label for="oauthDomain">Enter OAuth domain URL:</label>
-            <input type="text"
-                   id="oauthDomain"
-                   name="oauthDomain"
-                   required=""
-                   value=""
-                   size="50" />
-            <br />
-            <label for="oauthClientId">Enter OAuth client ID:</label>
-            <input type="text"
-                   id="oauthClientId"
-                   name="oauthClientId"
-                   required=""
-                   value=""
-                   size="32" />
-            <br />
-            <label for="oauthRedirectUrl">Enter OAuth redirect URL:</label>
-            <input type="text"
-                   id="oauthRedirectUrl"
-                   name="oauthRedirectUrl"
-                   required=""
-                   value=""
-                   size="50" />
-            <br />
-            <label for="samlRelayState">Enter App State:</label>
-            <input type="text"
-                   id="appState"
-                   name="appState"
-                   placeholder='Some App State.'
-                   size="50" />
-            <p>App State is not the same as state. AppState doesn't leave the browser.</p>
-            <br />
-            <div id="returnedAppState-div">
-                <label for="samlRelayState">The Returned App State:</label>
-                <input type="text"
-                       id="returnedAppState"
-                       name="returnedAppState"
-                       size="50"
-                       readonly="readonly" />
-            </div>
-            <b>Functions:</b>
-            <p><button type="button" id="loginButton" onclick="login();">Login with Auth0</button></p>
-            <p><button type="button" id="logoutButton" onclick="logout();">Logout</button></p>
-            <div id="loginToAlaskaAir-div">
-                <p>www.alaskaair.com still uses login cookies. Guests are logged in with a token, but not with the cookies. Click below</p>
-                <p><button type="button" id="loginToAlaskaAirButton" onclick="loginToAlaskaAir();">Login to www.AlaskaAir.com</button></p>
-            </div>
-        </form>
+    <div class="centered-div">
+      <h1>Alaska Airlines</h1>
+      <h2>Partner Authentication Example - Auth0 OAuth2</h2>
+    </div>
+  </div>
+  <hr />
+  <div>
+    <pre id="content-jwt" align="left">User Details will populate here after login</pre>
+  </div>
+  <hr />
+  <div id="uxActiveOptions">
+    <form id="oauthConfigForm">
+      <label for="oauthDomain">Enter OAuth domain URL:</label>
+      <input type="text"
+             id="oauthDomain"
+             name="oauthDomain"
+             required=""
+             value=""
+             size="50" />
+      <br />
+      <label for="oauthClientId">Enter OAuth client ID:</label>
+      <input type="text"
+             id="oauthClientId"
+             name="oauthClientId"
+             required=""
+             value=""
+             size="32" />
+      <br />
+      <label for="oauthRedirectUrl">Enter OAuth redirect URL:</label>
+      <input type="text"
+             id="oauthRedirectUrl"
+             name="oauthRedirectUrl"
+             required=""
+             value=""
+             size="50" />
+      <br />
+      <label for="samlRelayState">Enter App State:</label>
+      <input type="text"
+             id="appState"
+             name="appState"
+             placeholder='Some App State.'
+             size="50" />
+      <p class="note">App State is not the same as state. AppState doesn't leave the browser.</p>
+      <br />
+      <div id="returnedAppState-div">
+        <label for="samlRelayState">The Returned App State:</label>
+        <input type="text"
+               id="returnedAppState"
+               name="returnedAppState"
+               size="50"
+               readonly="readonly" />
+      </div>
+      <p><button type="button" id="loginButton" onclick="login();">Login with Auth0</button></p>
+      <p><button type="button" id="logoutButton" onclick="logout();">Logout</button></p>
+      <div id="loginToAlaskaAir-div">
+        <p>www.alaskaair.com still uses login cookies. Guests are logged in with a token, but not with the cookies. Click below</p>
+        <p><button type="button" id="loginToAlaskaAirButton" onclick="loginToAlaskaAir();">Login to www.AlaskaAir.com</button></p>
+      </div>
+    </form>
 
-    </div>
+  </div>
 </body>
 </html>
