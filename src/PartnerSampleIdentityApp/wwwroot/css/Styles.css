@@ -9,10 +9,12 @@
 
 h1 {
     text-align: center;
+    margin-bottom: 5px;
 }
 
 h2 {
     text-align: center;
+    margin-bottom: 5px;
 }
 
 form {
@@ -22,6 +24,11 @@ form {
 p {
     text-align: center;
 }
+
+    p.note {
+        margin: 0px;
+        border: 0px;
+    }
 
 .list-container {
     text-align: center; /* Center-align the content of the container */
@@ -79,4 +86,62 @@ button {
 
     button:hover {
         background-color: #45a049; /* Darkens the button slightly when hovering */
+    }
+
+/* Container div with flexbox */
+.flex-container {
+    display: flex;
+    align-items: center; /* Center vertically */
+    justify-content: flex-start; /* Align items to the start */
+    position: relative; /* Required for absolute positioning */
+    height: 100px; /* Set a specific height for the container */
+    margin: 0px 0px 10px 0px;
+    padding: 5px 0px 6px 0px;
+    border-radius: 0px;
+}
+
+    /* The first div */
+    .flex-container > .left {
+        flex: 0 0 auto; /* Only take the space it needs */
+        border: none; /* Remove border */
+        margin: 5px 0px 5px 0px;
+        padding: 0px 0px 0px 0px;
+    }
+
+    /* The second div centered by screen size */
+    .flex-container > .centered-div {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center; /* Center text horizontally */
+        pointer-events: none; /* Allow clicks to pass through if needed */
+        border: none; /* Remove border */
+        margin: 0px;
+        padding: 0px;
+    }
+
+/* Ensure the centered content does not stretch the container */
+.centered-div > h2 {
+    margin: 0; /* Remove default margin for h2 */
+}
+
+/* Make the a tags look like buttons */
+.left a {
+    display: block;
+    width: 200px; /* Fixed width for buttons */
+    padding: 8px; /* Padding inside the buttons */
+    background-color: #4CAF50; /* Button background color */
+    color: white; /* Text color */
+    text-align: left; /* Left align text */
+    text-decoration: none; /* Remove underline */
+    border: 1px solid #3d8a40; /* Border for the button */
+    /* border-radius: 5px; Rounded corners */
+}
+
+    /* Optional: Add hover effect */
+    .left a:hover {
+        background-color: #63e269; /* Lighter background on hover */
+        border-color: #59ca5d; /* Lighter border on hover */
+        color: #333333ff; /* Text color */
+        font-weight: bold; /* Make the text bold */
     }

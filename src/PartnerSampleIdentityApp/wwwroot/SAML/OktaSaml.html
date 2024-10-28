@@ -1,126 +1,160 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>SAML Auth - Redirect</title>
-    <link rel="stylesheet" href="/css/Styles.css" />
-    <script type="text/javascript">
-        // Update these for your SAML configuration
-        let initDomainProd = "auth0.alaskaair.com";
-        let initClientIdProd = "YdmrhDsA5Q4yQwWUE9oIn5DAFKQajVF2";
+  <meta charset="utf-8">
+  <title>SAML Auth - Redirect</title>
+  <link rel="stylesheet" href="/css/Styles.css" />
+  <script type="text/javascript">
+    // Update these for your SAML configuration
+    let initDomainProd = "auth0.alaskaair.com";
+    let initClientIdProd = "YdmrhDsA5Q4yQwWUE9oIn5DAFKQajVF2";
 
-        let initDomainQa = "auth0-qa.alaskaair.com";
-        let initClientIdQa = "Z44PoNZwqGlkByWjEZA5wXfYa1yiAZOZ";
+    let initDomainQa = "auth0-qa.alaskaair.com";
+    let initClientIdQa = "Z44PoNZwqGlkByWjEZA5wXfYa1yiAZOZ";
 
-        let initDomainTest = "auth0-test.alaskaair.com";
-        let initClientIdTest = "MvnAHImPPNtD4aB5dYRLFnSMQKzkdhFl";
+    let initDomainTest = "auth0-test.alaskaair.com";
+    let initClientIdTest = "MvnAHImPPNtD4aB5dYRLFnSMQKzkdhFl";
 
-        let initDomain = initDomainQa;
-        let initClientId = initClientIdQa;
+    let initDomain = initDomainQa;
+    let initClientId = initClientIdQa;
 
-        const initActionUrl = `https://${initDomain}/samlp/${initClientId}`;
-        const initRedirectUri = window.location.href;
+    let loginType = "POST";
 
-        window.onload = () => {
-            document.getElementById("samlDomain").value = initDomain;
-            document.getElementById("samlClientId").value = initClientId;
-            document.getElementById("samlRedirectUrl").value = initRedirectUri;
-            document.getElementById("samlActionUrl").value = initActionUrl;
+    const initActionUrl = `https://${initDomain}/samlp/${initClientId}`;
+    const initRedirectUri = window.location.href;
 
-            // Add event listener to update action URL when client ID changes
-            document.getElementById("samlDomain").addEventListener("input", updateActionUrl);
-            document.getElementById("samlClientId").addEventListener("input", updateActionUrl);
-        };
+    window.onload = () => {
+      document.getElementById("samlDomain").value = initDomain;
+      document.getElementById("samlClientId").value = initClientId;
+      document.getElementById("samlRedirectUrl").value = initRedirectUri;
+      document.getElementById("samlActionUrl").value = initActionUrl;
 
-        const updateActionUrl = () => {
-            const domain = document.getElementById("samlDomain").value;
-            const clientId = document.getElementById("samlClientId").value;
-            const newActionUrl = `https://${domain}/samlp/${clientId}`;
-            document.getElementById("samlActionUrl").value = newActionUrl;
-        };
+      // Add event listener to update action URL when client ID changes
+      document.getElementById("samlDomain").addEventListener("input", updateActionUrl);
+      document.getElementById("samlClientId").addEventListener("input", updateActionUrl);
+    };
 
-        const login = () => {
-            const actionUrl = document.getElementById("samlActionUrl").value;
-            const relayState = document.getElementById("samlRelayState").value;
+    const updateActionUrl = () => {
+      const domain = document.getElementById("samlDomain").value;
+      const clientId = document.getElementById("samlClientId").value;
+      const newActionUrl = `https://${domain}/samlp/${clientId}`;
+      document.getElementById("samlActionUrl").value = newActionUrl;
+    };
 
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = actionUrl;
+    const login = () => {
+      const actionUrl = document.getElementById("samlActionUrl").value;
+      const relayState = document.getElementById("samlRelayState").value;
+      const relayStateInput = document.createElement('input');
 
-            const relayStateInput = document.createElement('input');
-            relayStateInput.type = 'hidden';
-            relayStateInput.name = 'RelayState';
-            relayStateInput.value = relayState;
-            form.appendChild(relayStateInput);
+      if (loginType === "POST") {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = actionUrl;
 
-            document.body.appendChild(form);
-            form.submit();
-        };
+        relayStateInput.type = 'hidden';
+        relayStateInput.name = 'RelayState';
+        relayStateInput.value = relayState;
+        form.appendChild(relayStateInput);
 
-      const logout = () => {
-            // This actually uses OIDC url to logout, even though it is SAML.
-            let domain = document.getElementById("samlDomain").value;
-            let clientId = document.getElementById("samlClientId").value;
-            let postLogoutRedirectUrl = encodeURIComponent('https://localhost:7271/SAML/OktaSaml.html?logout=true');
-            let redirectUrl = `https://${domain}/oidc/logout?client_id=${clientId}&post_logout_redirect_uri=${postLogoutRedirectUrl}`
-            window.location.href = redirectUrl;
-        };
+        document.body.appendChild(form);
+        form.submit();
+      } else if (loginType === "GET") {
+        var redirectUrl = actionUrl;
+        if (relayStateInput.value) {
+          redirectUrl = `${redirectUrl}?RelayState=${relayState}`;
+        }
+        window.location.href = redirectUrl;
+      }
+    };
 
-        const updateUI = () => {
-            // This function would be called after successful authentication
-            // For now, we'll just update the content with a message
-            const userData = document.getElementById('content-saml');
-            userData.textContent = 'SAML authentication completed. Actual user details would be displayed here.';
-        };
-    </script>
+    const logout = () => {
+      // This actually uses OIDC url to logout, even though it is SAML.
+      let domain = document.getElementById("samlDomain").value;
+      let clientId = document.getElementById("samlClientId").value;
+      let postLogoutRedirectUrl = encodeURIComponent('https://localhost:7271/SAML/OktaSaml.html?logout=true');
+      let redirectUrl = `https://${domain}/oidc/logout?client_id=${clientId}&post_logout_redirect_uri=${postLogoutRedirectUrl}`;
+      window.location.href = redirectUrl;
+    };
+
+    const updateUI = () => {
+      // This function would be called after successful authentication
+      // For now, we'll just update the content with a message
+      const userData = document.getElementById('content-saml');
+      userData.textContent = 'SAML authentication completed. Actual user details would be displayed here.';
+    };
+
+    const setLoginType = (type) => {
+      loginType = type;
+    };
+  </script>
 </head>
 <body>
-    <h1>Alaska Airlines</h1>
-    <h2>Partner Authentication Example - SAML</h2>
-    <hr />
-    <div id="uxActiveOptions">
-        <form id="samlConfigForm">
-            <label for="samlDomain">Enter SAML domain:</label>
-            <input type="text"
-                   id="samlDomain"
-                   name="samlDomain"
-                   required=""
-                   size="50" />
-            <br />
-            <label for="samlClientId">Enter SAML client ID:</label>
-            <input type="text"
-                   id="samlClientId"
-                   name="samlClientId"
-                   required=""
-                   size="32" />
-            <br />
-            <label for="samlActionUrl">Enter SAML action URL:</label>
-            <input type="text"
-                   id="samlActionUrl"
-                   name="samlActionUrl"
-                   required=""
-                   size="50" />
-            <br />
-            <label for="samlRedirectUrl">Enter SAML redirect URL:</label>
-            <input type="text"
-                   id="samlRedirectUrl"
-                   name="samlRedirectUrl"
-                   required=""
-                   size="50" />
-            <br />
-            <label for="samlRelayState">Enter Relay State:</label>
-            <input type="text"
-                   id="samlRelayState"
-                   name="samlRelayState"
-                   placeholder="Relay State. Make it a url and you will be redirected to the url."
-                   size="50" />
-            <p>RelayState owned and managed by you. Custom in this web page does the redirect as such isn't automatic.'</p>
-            <br />
-
-            <b>Functions:</b>
-            <p><button type="button" onclick="login();">Login with SAML</button></p>
-            <p><button type="button" onclick="logout();">Logout</button></p>
-        </form>
+  <div class="flex-container">
+    <div class="left">
+      <a href="/">Home</a>
+      <a href="/SAML/OktaSaml.html">Saml Login</a>
+      <a href="/OAuth2/Auth0-OAuth2.html">OAuth2 Login</a>
     </div>
+    <div class="centered-div">
+      <h1>Alaska Airlines</h1>
+      <h2>Partner Authentication Example - SAML</h2>
+    </div>
+  </div>
+  <hr />
+  </div>
+  <div id="uxActiveOptions">
+    <form id="samlConfigForm">
+      <label for="samlDomain">Enter SAML domain:</label>
+      <input type="text"
+             id="samlDomain"
+             name="samlDomain"
+             required=""
+             size="50" />
+      <br />
+      <label for="samlClientId">Enter SAML client ID:</label>
+      <input type="text"
+             id="samlClientId"
+             name="samlClientId"
+             required=""
+             size="32" />
+      <br />
+      <label for="samlActionUrl">Enter SAML action URL:</label>
+      <input type="text"
+             id="samlActionUrl"
+             name="samlActionUrl"
+             required=""
+             size="50" />
+      <br />
+      <label for="samlRedirectUrl">Enter SAML redirect URL:</label>
+      <input type="text"
+             id="samlRedirectUrl"
+             name="samlRedirectUrl"
+             required=""
+             size="50" />
+      <br />
+      <label for="samlRelayState">Enter Relay State:</label>
+      <input type="text"
+             id="samlRelayState"
+             name="samlRelayState"
+             placeholder="Relay State. Make it a url and you will be redirected to the url."
+             size="50" />
+      <p class="note">RelayState owned and managed by you. Custom in this web page does the redirect as such isn't automatic.'</p>
+      <br />
+
+      <!-- Radio buttons for selecting login type -->
+      <label>Login Type:</label>
+      <div>
+        <input type="radio" id="post" name="loginType" value="POST" checked onclick="setLoginType('POST')">
+        <label for="post">POST</label>
+        <input type="radio" id="get" name="loginType" value="GET" onclick="setLoginType('GET')">
+        <label for="get">GET</label>
+      </div>
+      <p class="note">SAML supports either a POST or GET request to start the login.</p>
+
+
+      <p><button type="button" onclick="login();">Login with SAML</button></p>
+      <p><button type="button" onclick="logout();">Logout</button></p>
+    </form>
+  </div>
 </body>
 </html>
