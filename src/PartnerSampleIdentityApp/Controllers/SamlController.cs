@@ -46,7 +46,7 @@ public class SamlController : ControllerBase
             relayState = GetValue(plainTextSaml, "RelayState") ?? "/";
         var issuer = GetIssuer(plainTextSaml).Substring(4);
         var clientId = GetValue(plainTextSaml, "clientID");
-        if (!string.IsNullOrEmpty(relayState) && relayState != "/")
+        if (!string.IsNullOrEmpty(relayState) && relayState.StartsWith("https://"))
         {
             return Redirect(relayState);
         }
