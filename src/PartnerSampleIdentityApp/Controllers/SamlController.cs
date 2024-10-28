@@ -23,9 +23,11 @@ public class SamlController : ControllerBase
     [HttpPost("Consume")]
     public IActionResult Consume([FromForm] string samlResponse, [FromForm] string? relayState = null)
     {
+        if (string.IsNullOrWhiteSpace(samlResponse))
+            return BadRequest("No SAML response found.");
+
         //Decoded SAML response CAN be encrypted
         //Check for encrypted SAML response and decrypt if necessary
-
         var decodedResponseXml = Encoding.UTF8.GetString(Convert.FromBase64String(samlResponse));
         var plainTextSaml = string.Empty;
         if (decodedResponseXml.Contains("xenc:CipherValue"))
@@ -46,16 +48,13 @@ public class SamlController : ControllerBase
         var clientId = GetValue(plainTextSaml, "clientID");
         if (!string.IsNullOrEmpty(relayState) && relayState != "/")
         {
-            // Normally the relay state would NOT be a Url, it would be some other value
-            // that the app would use to determine where to redirect.
-            var html = string.Format(InstantRedirectHtml, relayState);
-            return Content(html, "text/html", Encoding.UTF8);
+            return Redirect(relayState);
         }
         else
         {
 
             _httpContextAccessor.HttpContext!.Request.Query.TryGetValue("Partner", out StringValues partner);
-            var html = string.Format(HtmlForXml, issuer, clientId, partner, SecurityElement.Escape(xml.PrettyXml));
+            var html = string.Format(HtmlForXml, issuer, clientId, partner, SecurityElement.Escape(xml.PrettyXml), relayState);
             return Content(html, "text/html", Encoding.UTF8);
         }
     }
@@ -76,7 +75,7 @@ public class SamlController : ControllerBase
         }};
     </script>
 <style>
-    .xml-box {{
+    .text-box {{
         border: 1px solid #888; /* Gray border */
         background-color: #f9f9f9; /* Light gray background */
         padding: 10px; /* Some padding around the content */
@@ -88,29 +87,29 @@ public class SamlController : ControllerBase
 </style>
 </head>
 <body>
-<h1>Partner: {2}</h1>
-<h2>SAML Token</h2>
-
-<!-- The XML content -->
-<pre class=""xml-box"">
+  <div class=""flex-container"">
+    <div class=""left"">
+      <a href=""/"">Home</a>
+      <a href=""/SAML/OktaSaml.html"">Saml Login</a>
+      <a href=""/OAuth2/Auth0-OAuth2.html"">OAuth2 Login</a>
+    </div>
+    <div class=""centered-div"">
+      <h1>Partner: {2}</h1>
+    </div>
+  </div>
+<h2>SAML Response</h2>
+<!-- The SAML Response XML content -->
+<pre class=""text-box"">
 {3}
+</pre>
+<!-- The Relay State -->
+<h2>Relay State</h2>
+<pre class=""text-box"">
+{4}
 </pre>
 <p><button type=""button"" onclick=""logout();"">Logout</button></p>
 </body>
 </html>";
-
-    private const string InstantRedirectHtml = @"<!DOCTYPE html>
-<html>
-<head>
-    <meta http-equiv=""refresh"" content=""0; url={0}"" />
-    <title>Page Redirection</title>
-</head>
-<body>
-    <!-- Note: don't rely solely on JavaScript for redirection, as users might have it disabled. -->
-    <p>If you are not redirected automatically, <a href='{0}'>click here</a>.</p>
-</body>
-</html>";
-
 
     /// <summary>Extracts the value of an attribute from a SAML token.</summary>
     /// <param name="samlToken">The SAML token as a string.</param>
