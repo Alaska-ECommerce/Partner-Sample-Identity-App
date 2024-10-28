@@ -23,18 +23,20 @@ public class SamlController : ControllerBase
     [HttpPost("Consume")]
     public IActionResult Consume([FromForm] string samlResponse, [FromForm] string? relayState = null)
     {
+        //Decoded SAML response CAN be encrypted
+        //Check for encrypted SAML response and decrypt if necessary
+
         var decodedResponseXml = Encoding.UTF8.GetString(Convert.FromBase64String(samlResponse));
         var plainTextSaml = string.Empty;
         if (decodedResponseXml.Contains("xenc:CipherValue"))
         {
             var samlDecryptor = new SamlDecryptor(Data.PrivateKey);
             var decryptedXml = samlDecryptor.DecryptSamlAsync(decodedResponseXml).Result;
-            //plainTextSaml = Encoding.UTF8.GetString(decryptedXml);
             plainTextSaml = decryptedXml;
         }
         else
         {
-            plainTextSaml = Encoding.UTF8.GetString(Convert.FromBase64String(samlResponse));
+            plainTextSaml = decodedResponseXml;
         }
 
         var xml = new Xml(plainTextSaml);
