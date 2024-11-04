@@ -6,6 +6,7 @@ using Session.Crypto;
 using System.Security;
 using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace ExampleSamlConsumer.Controllers;
 
@@ -44,8 +45,6 @@ public class SamlController : ControllerBase
         var xml = new Xml(plainTextSaml);
         if (string.IsNullOrWhiteSpace(relayState))
             relayState = GetValue(plainTextSaml, "RelayState") ?? "/";
-        var issuer = GetIssuer(plainTextSaml).Substring(4);
-        var clientId = GetValue(plainTextSaml, "clientID");
         if (!string.IsNullOrEmpty(relayState) && relayState.StartsWith("https://"))
         {
             return Redirect(relayState);
@@ -54,12 +53,27 @@ public class SamlController : ControllerBase
         {
 
             _httpContextAccessor.HttpContext!.Request.Query.TryGetValue("Partner", out StringValues partner);
-            var html = string.Format(HtmlForXml, issuer, clientId, partner, SecurityElement.Escape(xml.PrettyXml), relayState);
+            var uniqueId = Guid.NewGuid().ToString();
+            var issuer = GetIssuer(plainTextSaml)!.Substring(4);
+            var clientId = GetValue(plainTextSaml, "clientID");
+            var nameID = GetNameID(plainTextSaml);
+            var sessionIndex = GetSessionIndex(plainTextSaml);
+            var html = string.Format(HtmlForLoginXml, uniqueId, issuer, clientId, nameID, sessionIndex, partner, SecurityElement.Escape(xml.PrettyXml), relayState);
             return Content(html, "text/html", Encoding.UTF8);
         }
     }
 
-    private const string HtmlForXml = @"
+    [HttpPost("Logout")]
+    public async Task<IActionResult> Post([FromForm] string samlResponse)
+    {
+        var decodedResponseXml = Encoding.UTF8.GetString(Convert.FromBase64String(samlResponse));
+
+        var xml = new Xml(decodedResponseXml);
+        var html = string.Format(HtmlForLogoutXml, SecurityElement.Escape(xml.PrettyXml));
+        return Content(html, "text/html", Encoding.UTF8);
+    }
+
+    private const string HtmlForLoginXml = @"
 <!DOCTYPE html>
 <html lang=""en"">
 <head>
@@ -67,11 +81,15 @@ public class SamlController : ControllerBase
 <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
 <title>Display XML</title>
 <link rel=""stylesheet"" href=""/css/Styles.css"" />
-    <script type=""text/javascript"">
+<script src=""/scripts/logout.js""></script>
+<script type=""text/javascript"">
         const logout = () => {{
-            let postLogoutRedirectUrl = encodeURIComponent('https://localhost:7271/SAML/OktaSaml.html?logout=true');
-            let redirectUrl = `https://{0}/oidc/logout?client_id={1}&post_logout_redirect_uri=${{postLogoutRedirectUrl}}`
-            window.location.href = redirectUrl;
+            // {0} is the uniqueId
+            // {1} is the issuer or domain
+            // {2} is the clientId
+            // {3} is the nameID
+            // {4} is the sessionIndex
+            sendLogoutPost('{0}', '{1}', '{2}', '{3}', '{4}');
         }};
     </script>
 <style>
@@ -94,20 +112,59 @@ public class SamlController : ControllerBase
       <a href=""/OAuth2/Auth0-OAuth2.html"">OAuth2 Login</a>
     </div>
     <div class=""centered-div"">
-      <h1>Partner: {2}</h1>
+      <h1>Partner: {5}</h1>
     </div>
   </div>
 <h2>SAML Response</h2>
 <!-- The SAML Response XML content -->
 <pre class=""text-box"">
-{3}
+{6}
 </pre>
 <!-- The Relay State -->
 <h2>Relay State</h2>
 <pre class=""text-box"">
-{4}
+{7}
 </pre>
 <p><button type=""button"" onclick=""logout();"">Logout</button></p>
+</body>
+</html>";
+
+    private const string HtmlForLogoutXml = @"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+<meta charset=""UTF-8"">
+<meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+<title>Display XML</title>
+<link rel=""stylesheet"" href=""/css/Styles.css"" />
+<style>
+    .text-box {{
+        border: 1px solid #888; /* Gray border */
+        background-color: #f9f9f9; /* Light gray background */
+        padding: 10px; /* Some padding around the content */
+        margin: 20px 0; /* Some margin at the top and bottom */
+        font-family: monospace; /* Monospace font for better readability */
+        overflow: auto; /* Add scroll bars when content overflows */
+        max-height: 400px; /* Set a max height to ensure the box is not too tall */
+    }}
+</style>
+</head>
+<body>
+  <div class=""flex-container"">
+    <div class=""left"">
+      <a href=""/"">Home</a>
+      <a href=""/SAML/OktaSaml.html"">Saml Login</a>
+      <a href=""/OAuth2/Auth0-OAuth2.html"">OAuth2 Login</a>
+    </div>
+    <div class=""centered-div"">
+      <h1>You are logged out!</h1>
+    </div>
+  </div>
+<h2>SAML Logout Response</h2>
+<!-- The SAML Logout Response XML content -->
+<pre class=""text-box"">
+{0}
+</pre>
 </body>
 </html>";
 
@@ -130,18 +187,35 @@ public class SamlController : ControllerBase
         return loginStateNode?.InnerText;
     }
 
-    public string? GetIssuer(string samlToken)
+    ///<inheritdoc/>
+    public XmlNode GetSingleNode(string saml, string xpath)
     {
         var xmlDoc = new XmlDocument();
-        xmlDoc.LoadXml(samlToken);
-        // Create a namespace manager to handle the namespaces in the SAML token.
+        xmlDoc.LoadXml(saml);
+
+        // Add the necessary namespaces to the XmlNamespaceManager to handle the prefixed namespace in the XML.
         var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
-        nsmgr.AddNamespace("saml", "urn:oasis:names:tc:SAML:2.0:assertion");
         nsmgr.AddNamespace("samlp", "urn:oasis:names:tc:SAML:2.0:protocol");
+        nsmgr.AddNamespace("saml", "urn:oasis:names:tc:SAML:2.0:assertion");
 
-        // XPath query to find the Attribute node for loginState
-        var loginStateNode = xmlDoc.SelectSingleNode($"//saml:Issuer", nsmgr);
+        return xmlDoc.SelectSingleNode(xpath, nsmgr)!;
+    }
 
-        return loginStateNode?.InnerText;
+    public string? GetIssuer(string samlToken)
+    {
+        var node = GetSingleNode(samlToken, "//saml:Issuer");
+        return node.InnerText;
+    }
+
+    public string? GetNameID(string samlToken)
+    {
+        var node = GetSingleNode(samlToken, "//saml:Assertion/saml:Subject/saml:NameID");
+        return node.InnerText;
+    }
+
+    public string GetSessionIndex(string samlToken)
+    {
+        var node = GetSingleNode(samlToken, "//saml:Assertion/saml:AuthnStatement/@SessionIndex");
+        return node.Value!;
     }
 }
