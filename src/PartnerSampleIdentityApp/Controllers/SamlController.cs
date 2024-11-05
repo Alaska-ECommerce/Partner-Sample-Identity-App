@@ -84,11 +84,6 @@ public class SamlController : ControllerBase
 <script src=""/scripts/logout.js""></script>
 <script type=""text/javascript"">
         const logout = () => {{
-            // {0} is the uniqueId
-            // {1} is the issuer or domain
-            // {2} is the clientId
-            // {3} is the nameID
-            // {4} is the sessionIndex
             sendLogoutPost('{0}', '{1}', '{2}', '{3}', '{4}');
         }};
     </script>
