@@ -131,6 +131,14 @@ public class SamlController : ControllerBase
 <meta charset=""UTF-8"">
 <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
 <title>Display XML</title>
+<script type=""text/javascript"">
+        const logout = () => {{
+            var returnUrl = `${{encodeURI(window.location.origin)}}/loggedout.html`;
+            var qaUrl = `https://platform-qa-fd.azurefd.net/account/session/signout/callback?post_logout_redirect_uri=${{returnUrl}}`;
+            var testUrl = `https://platform-test-fd.azurefd.net/account/session/signout/callback?post_logout_redirect_uri=${{returnUrl}}`;
+            window.location.href = qaUrl;
+        }};
+    </script>
 <link rel=""stylesheet"" href=""/css/Styles.css"" />
 <style>
     .text-box {{
@@ -160,6 +168,8 @@ public class SamlController : ControllerBase
 <pre class=""text-box"">
 {0}
 </pre>
+<p><button type=""button"" onclick=""logout();"">Logout of www.alaskaair.com</button></p>
+<p>Hint: As a partner, you would want to automate the logout process by redirecting automatically as opposed to using this button.</p>
 </body>
 </html>";
 
