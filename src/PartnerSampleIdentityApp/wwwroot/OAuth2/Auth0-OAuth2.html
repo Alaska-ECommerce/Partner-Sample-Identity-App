@@ -8,20 +8,27 @@
     <link rel="stylesheet" href="/css/Styles.css" />
     <script type="text/javascript">
         // Update these for your SAML configuration
-        let initDomainQa = "auth0-qa.alaskaair.com";
-        let initClientIdQa = "Z44PoNZwqGlkByWjEZA5wXfYa1yiAZOZ";
+        const initDomainProd = "auth0.alaskaair.com";
+        const initClientIdProd = "YdmrhDsA5Q4yQwWUE9oIn5DAFKQajVF2";
 
-        let initDomainTest = "auth0-test.alaskaair.com";
-        let initClientIdTest = "MvnAHImPPNtD4aB5dYRLFnSMQKzkdhFl";
+        const initDomainQa = "auth0-qa.alaskaair.com";
+        const initClientIdQa = "Z44PoNZwqGlkByWjEZA5wXfYa1yiAZOZ";
 
-        let initDomain = initDomainQa;
-        let initClientId = initClientIdQa;
+        const initDomainTest = "auth0-test.alaskaair.com";
+        const initClientIdTest = "MvnAHImPPNtD4aB5dYRLFnSMQKzkdhFl";
+
+        let initDomain = initDomainProd;
+        let initClientId = initClientIdProd;
+
         const currentUrl = new URL(window.location.href);
         const urlWithoutParameters = currentUrl.origin + currentUrl.pathname;
-        let initRedirectUri = urlWithoutParameters;
+        const initRedirectUri = urlWithoutParameters;
 
         let auth0client = null;
 
+        /**
+         * Initialize the Auth0 client and set form values on window load.
+         */
         window.onload = async () => {
             document.getElementById("oauthDomain").setAttribute("value", initDomain);
             document.getElementById("oauthClientId").setAttribute("value", initClientId);
@@ -30,23 +37,26 @@
             await initializeAuth0Client();
         };
 
+        /**
+         * Initialize the Auth0 client and handle redirection if needed.
+         */
         const initializeAuth0Client = async () => {
             let isAuthenticated = auth0client && await auth0client.isAuthenticated();
             if (isAuthenticated) {
                 return;
             }
             const config = {
-                "domain": document.getElementById("oauthDomain").value,
-                "clientId": document.getElementById("oauthClientId").value,
-                "redirect_uri": document.getElementById("oauthRedirectUrl").value
+                domain: document.getElementById("oauthDomain").value,
+                clientId: document.getElementById("oauthClientId").value,
+                redirect_uri: document.getElementById("oauthRedirectUrl").value
             };
 
             auth0client = await auth0.createAuth0Client(config);
 
             if (window.location.search.includes("code=") && window.location.search.includes("state=")) {
                 try {
-                    var result = await auth0client.handleRedirectCallback();
-                    var appState = result.appState || 'No appState returned';
+                    const result = await auth0client.handleRedirectCallback();
+                    const appState = result.appState || 'No appState returned';
                     document.getElementById("returnedAppState").value = appState;
                 } catch (error) {
                     console.error("Error handling redirect callback", error);
@@ -56,10 +66,12 @@
             await updateUI();
         };
 
+        /**
+         * Trigger login with Auth0 and redirect to the specified URL.
+         */
         const login = async () => {
-            var redirectUri = document.getElementById("oauthRedirectUrl").value;
-            // Retrieve the OAuth state JSON from the input field
-            var myAppState = document.getElementById("appState").value;
+            const redirectUri = document.getElementById("oauthRedirectUrl").value;
+            const myAppState = document.getElementById("appState").value;
             const options = {
                 appState: myAppState,
                 authorizationParams: {
@@ -70,56 +82,62 @@
             await auth0client.loginWithRedirect(options);
         };
 
+        /**
+         * Trigger logout from Auth0 and redirect to the specified URL.
+         */
         const logout = () => {
-            let domain = document.getElementById("oauthDomain").value;
-            let clientId = document.getElementById("oauthClientId").value;
-            let postLogoutRedirectUrl = encodeURIComponent(document.getElementById("oauthRedirectUrl").value);
-            let logoutUrl = `https://${domain}/oidc/logout?client_id=${clientId}&post_logout_redirect_uri=${postLogoutRedirectUrl}`;
+            const domain = document.getElementById("oauthDomain").value;
+            const clientId = document.getElementById("oauthClientId").value;
+            const postLogoutRedirectUrl = encodeURIComponent(document.getElementById("oauthRedirectUrl").value);
+            const logoutUrl = `https://${domain}/oidc/logout?client_id=${clientId}&post_logout_redirect_uri=${postLogoutRedirectUrl}`;
             window.location.href = logoutUrl;
         };
 
+        /**
+         * Login to AlaskaAir with a token.
+         */
         const loginToAlaskaAir = async () => {
-            var route = "eki/signin/bytoken";
-            // The host and path for Session in the different environments.
-            var local = "https://localhost:7271";
-            var testurl = "https://platform-test-fd.azurefd.net/account/session";
-            var qaurl = "https://platform-qa-fd.azurefd.net/account/session";
-            var produrl = "https://www.alaskaair.com/account/session";
+            const route = "eki/signin/bytoken";
+            const testurl = "https://platform-test-fd.azurefd.net/account/session";
+            const actionUrl = `${testurl}/${route}`;
 
-            // Change the first part of the URL to the appropriate environment
-            let actionUrl = `${qaurl}/${route}`;
-
-            let form = document.createElement('form');
+            const form = document.createElement('form');
             form.method = 'POST';
             form.action = actionUrl;
 
-            let idToken = undefined;
+            let idToken;
             try {
-                // Get the ID token claims
                 const idTokenClaims = await auth0client.getIdTokenClaims();
-                // The ID token is available on the __raw property
                 idToken = idTokenClaims.__raw;
-
                 console.log("ID Token:", idToken);
-                // You can now use the ID token as needed
             } catch (error) {
                 console.error("Error getting the ID token", error);
             }
 
-            appendFormInput('hidden', 'token', idToken, form)
-            appendFormInput('hidden', 'returnUrl', window.location.href, form)
+            appendFormInput('hidden', 'token', idToken, form);
+            appendFormInput('hidden', 'returnUrl', window.location.href, form);
             document.body.appendChild(form);
             form.submit();
         };
 
-        const appendFormInput = async (type, name, value, form) => {
-            let input = document.createElement('input');
+        /**
+         * Append an input to a form.
+         * @param {string} type - The input type.
+         * @param {string} name - The input name.
+         * @param {string} value - The input value.
+         * @param {HTMLFormElement} form - The form element.
+         */
+        const appendFormInput = (type, name, value, form) => {
+            const input = document.createElement('input');
             input.type = type;
             input.name = name;
             input.value = value;
-            form.appendChild(input)
-        }
+            form.appendChild(input);
+        };
 
+        /**
+         * Update the UI based on the authentication status.
+         */
         const updateUI = async () => {
             const isAuthenticated = await auth0client.isAuthenticated();
             const userData = document.getElementById('content-jwt');
@@ -146,71 +164,67 @@
     </script>
 </head>
 <body>
-  <div class="flex-container">
-    <div class="left">
-      <a href="/">Home</a>
-      <a href="/SAML/OktaSaml.html">Saml Login</a>
-      <a href="/OAuth2/Auth0-OAuth2.html">OAuth2 Login</a>
+    <div class="flex-container">
+        <div class="left">
+            <a href="/">Home</a>
+            <a href="/SAML/OktaSaml.html">Saml Login</a>
+            <a href="/OAuth2/Auth0-OAuth2.html">OAuth2 Login</a>
+        </div>
+        <div class="centered-div">
+            <h1>Alaska Airlines</h1>
+            <h2>Partner Authentication Example - Auth0 OAuth2</h2>
+        </div>
     </div>
-    <div class="centered-div">
-      <h1>Alaska Airlines</h1>
-      <h2>Partner Authentication Example - Auth0 OAuth2</h2>
+    <div>
+        <pre id="content-jwt" align="left">User Details will populate here after login</pre>
     </div>
-  </div>
-  <div>
-    <pre id="content-jwt" align="left">User Details will populate here after login</pre>
-  </div>
-  <hr />
-  <div id="uxActiveOptions">
-    <form id="oauthConfigForm">
-      <label for="oauthDomain">Enter OAuth domain URL:</label>
-      <input type="text"
-             id="oauthDomain"
-             name="oauthDomain"
-             required=""
-             value=""
-             size="50" />
-      <br />
-      <label for="oauthClientId">Enter OAuth client ID:</label>
-      <input type="text"
-             id="oauthClientId"
-             name="oauthClientId"
-             required=""
-             value=""
-             size="32" />
-      <br />
-      <label for="oauthRedirectUrl">Enter OAuth redirect URL:</label>
-      <input type="text"
-             id="oauthRedirectUrl"
-             name="oauthRedirectUrl"
-             required=""
-             value=""
-             size="50" />
-      <br />
-      <label for="samlRelayState">Enter App State:</label>
-      <input type="text"
-             id="appState"
-             name="appState"
-             placeholder='Some App State.'
-             size="50" />
-      <p class="note">App State is not the same as state. AppState doesn't leave the browser.</p>
-      <br />
-      <div id="returnedAppState-div">
-        <label for="samlRelayState">The Returned App State:</label>
-        <input type="text"
-               id="returnedAppState"
-               name="returnedAppState"
-               size="50"
-               readonly="readonly" />
-      </div>
-      <p><button type="button" id="loginButton" onclick="login();">Login with Auth0</button></p>
-      <p><button type="button" id="logoutButton" onclick="logout();">Logout</button></p>
-      <div id="loginToAlaskaAir-div">
-        <p>www.alaskaair.com still uses login cookies. Guests are logged in with a token, but not with the cookies. Click below</p>
-        <p><button type="button" id="loginToAlaskaAirButton" onclick="loginToAlaskaAir();">Login to www.AlaskaAir.com</button></p>
-      </div>
-    </form>
-
-  </div>
+    <hr />
+    <div id="uxActiveOptions">
+        <form id="oauthConfigForm">
+            <label for="oauthDomain">Enter OAuth domain URL:</label>
+            <input type="text"
+                   id="oauthDomain"
+                   name="oauthDomain"
+                   required
+                   size="50" />
+            <br />
+            <label for="oauthClientId">Enter OAuth client ID:</label>
+            <input type="text"
+                   id="oauthClientId"
+                   name="oauthClientId"
+                   required
+                   size="32" />
+            <br />
+            <label for="oauthRedirectUrl">Enter OAuth redirect URL:</label>
+            <input type="text"
+                   id="oauthRedirectUrl"
+                   name="oauthRedirectUrl"
+                   required
+                   size="50" />
+            <br />
+            <label for="samlRelayState">Enter App State:</label>
+            <input type="text"
+                   id="appState"
+                   name="appState"
+                   placeholder='Some App State.'
+                   size="50" />
+            <p class="note">App State is not the same as state. AppState doesn't leave the browser.</p>
+            <br />
+            <div id="returnedAppState-div">
+                <label for="samlRelayState">The Returned App State:</label>
+                <input type="text"
+                       id="returnedAppState"
+                       name="returnedAppState"
+                       size="50"
+                       readonly />
+            </div>
+            <p><button type="button" id="loginButton" onclick="login();">Login with Auth0</button></p>
+            <p><button type="button" id="logoutButton" onclick="logout();">Logout</button></p>
+            <div id="loginToAlaskaAir-div">
+                <p>www.alaskaair.com still uses login cookies. Guests are logged in with a token, but not with the cookies. Click below</p>
+                <p><button type="button" id="loginToAlaskaAirButton" onclick="loginToAlaskaAir();">Login to www.AlaskaAir.com</button></p>
+            </div>
+        </form>
+    </div>
 </body>
 </html>
