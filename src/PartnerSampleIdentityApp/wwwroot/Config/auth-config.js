@@ -15,7 +15,8 @@ const AUTH_CONFIG = {
     }
 };
 
-let currentEnv = 'test';
+// Initialize currentEnv from localStorage, fallback to 'test'
+let currentEnv = localStorage.getItem('selectedEnvironment') || 'test';
 
 const getEnvironments = () => Object.keys(AUTH_CONFIG);
 
@@ -26,6 +27,8 @@ const getCurrentEnvironment = () => currentEnv;
 const setEnvironment = (env) => {
     if (AUTH_CONFIG[env]) {
         currentEnv = env;
+        // Store the selected environment in localStorage
+        localStorage.setItem('selectedEnvironment', env);
         return getCurrentConfig();
     }
     throw new Error(`Invalid environment: ${env}`);

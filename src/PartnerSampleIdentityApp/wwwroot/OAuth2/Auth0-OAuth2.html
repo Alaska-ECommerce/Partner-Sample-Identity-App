@@ -78,12 +78,19 @@
                 document.querySelectorAll('[id$="oauthRedirectUrl"]').forEach(el =>
                     el.value = initRedirectUri);
 
+                // Get stored auth type or default to 'spa'
+                const storedAuthType = localStorage.getItem('selectedAuthType') || 'spa';
+                
                 if (window.location.hash && window.location.hash.includes('access_token')) {
                     await showSelectedForm('regular');
+                    // Handle regular web auth response
+                    handleRegularAuthResponse();
                 } else if (window.location.search.includes("code=")) {
                     await showSelectedForm('spa');
+                    // Handle SPA auth response
+                    await handleSpaAuthResponse();
                 } else {
-                    await showSelectedForm('spa');
+                    await showSelectedForm(storedAuthType);
                 }
             } catch (error) {
                 console.error('Initialization error:', error);
@@ -91,12 +98,183 @@
             }
         };
 
-        // Make key functions available to window object for HTML onclick handlers
-        window.showSelectedForm = showSelectedForm;
-        window.regularLogin = regularLogin;
+        async function spaLogin() {
+            try {
+                const domain = document.getElementById('spa-oauthDomain').value;
+                const clientId = document.getElementById('spa-oauthClientId').value;
+                const redirectUri = document.getElementById('spa-oauthRedirectUrl').value;
+                const appState = document.getElementById('spa-appState').value;
+
+                auth0client = await auth0.createAuth0Client({
+                    domain,
+                    clientId,
+                    authorizationParams: {
+                        redirect_uri: redirectUri
+                    }
+                });
+
+                await auth0client.loginWithRedirect({
+                    appState: appState || undefined
+                });
+            } catch (error) {
+                console.error('SPA login error:', error);
+                showError('Failed to initialize login. Please check your configuration.');
+            }
+        }
+
+        async function regularLogin() {
+            try {
+                const domain = document.getElementById('regular-oauthDomain').value;
+                const clientId = document.getElementById('regular-oauthClientId').value;
+                const redirectUri = document.getElementById('regular-oauthRedirectUrl').value;
+
+                webAuth = new Auth0WebAuth({
+                    domain,
+                    clientID: clientId,
+                    redirectUri,
+                    responseType: 'token id_token',
+                    scope: 'openid profile email'
+                });
+
+                webAuth.authorize();
+            } catch (error) {
+                console.error('Regular login error:', error);
+                showError('Failed to initialize login. Please check your configuration.');
+            }
+        }
+
+        async function logout(type) {
+            try {
+                if (type === 'spa' && auth0client) {
+                    await auth0client.logout({
+                        returnTo: window.location.origin + window.location.pathname
+                    });
+                } else if (type === 'regular' && webAuth) {
+                    webAuth.logout({
+                        returnTo: window.location.origin + window.location.pathname
+                    });
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                showError('Failed to logout. Please try again.');
+            }
+        }
+
+        async function loginToAlaskaAir(type) {
+            // Implement your Alaska Air specific login logic here
+            console.log(`Initiating Alaska Air login for ${type}`);
+            // This is a placeholder - implement actual logic based on your requirements
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        async function showSelectedForm(type) {
+            // Store the selected auth type
+            localStorage.setItem('selectedAuthType', type);
+            
+            document.getElementById('spaForm').style.display = type === 'spa' ? 'block' : 'none';
+            document.getElementById('regularForm').style.display = type === 'regular' ? 'block' : 'none';
+            
+            // Update the selector
+            document.getElementById('authTypeSelector').value = type;
+        }
+
+        // Add these new functions to handle auth responses
+        async function handleSpaAuthResponse() {
+            try {
+                const domain = document.getElementById('spa-oauthDomain').value;
+                const clientId = document.getElementById('spa-oauthClientId').value;
+                const redirectUri = document.getElementById('spa-oauthRedirectUrl').value;
+
+                auth0client = await auth0.createAuth0Client({
+                    domain,
+                    clientId,
+                    authorizationParams: {
+                        redirect_uri: redirectUri
+                    }
+                });
+
+                // Handle the authentication response
+                await auth0client.handleRedirectCallback();
+                
+                // Get the user info
+                const user = await auth0client.getUser();
+                
+                // Display user details
+                displayUserDetails(user);
+                
+                // Get and display the returned app state if any
+                const appState = await auth0client.getTokenSilently();
+                document.getElementById('spa-returnedAppState').value = appState;
+            } catch (error) {
+                console.error('Error handling SPA auth response:', error);
+                showError('Failed to process authentication response');
+            }
+        }
+
+        function handleRegularAuthResponse() {
+            try {
+                const domain = document.getElementById('regular-oauthDomain').value;
+                const clientId = document.getElementById('regular-oauthClientId').value;
+                const redirectUri = document.getElementById('regular-oauthRedirectUrl').value;
+
+                webAuth = new Auth0WebAuth({
+                    domain,
+                    clientID: clientId,
+                    redirectUri,
+                    responseType: 'token id_token',
+                    scope: 'openid profile email'
+                });
+
+                webAuth.parseHash((err, authResult) => {
+                    if (err) {
+                        console.error('Error parsing hash:', err);
+                        showError(err.error_description);
+                        return;
+                    }
+                    if (authResult && authResult.accessToken) {
+                        // Display the auth result
+                        document.getElementById('regular-returnedAppState').value = JSON.stringify(authResult);
+                        
+                        // Get user info
+                        webAuth.client.userInfo(authResult.accessToken, (err, user) => {
+                            if (err) {
+                                console.error('Error getting user info:', err);
+                                showError('Failed to get user information');
+                                return;
+                            }
+                            displayUserDetails(user);
+                        });
+                    }
+                });
+            } catch (error) {
+                console.error('Error handling regular auth response:', error);
+                showError('Failed to process authentication response');
+            }
+        }
+
+        function displayUserDetails(user) {
+            try {
+                const contentJwt = document.getElementById('content-jwt');
+                if (contentJwt) {
+                    contentJwt.textContent = JSON.stringify(user, null, 2);
+                }
+            } catch (error) {
+                console.error('Error displaying user details:', error);
+                showError('Failed to display user information');
+            }
+        }
+
+        // Make functions available to window object
         window.spaLogin = spaLogin;
+        window.regularLogin = regularLogin;
         window.logout = logout;
         window.loginToAlaskaAir = loginToAlaskaAir;
+        window.showSelectedForm = showSelectedForm;
     </script>
 </head>
 <body>
