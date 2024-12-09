@@ -18,6 +18,7 @@
             setEnvironment,
             getClientId,
             getDomain,
+            getType,
             getCurrentEnvironment,
             getEnvironments
         } from '/Config/auth-config.js';
@@ -32,11 +33,12 @@
             // Create environment selector
             const stateSelector = document.createElement('div');
             stateSelector.className = 'environment-selector';
+            let currentEnv = getCurrentEnvironment();
             stateSelector.innerHTML = `
                 <label for="envSelector">Environment:</label>
                 <select id="envSelector" onchange="window.handleEnvironmentChange(this.value)">
                     ${getEnvironments().map(env =>
-                        `<option value="${env}" ${env === getCurrentEnvironment() ? 'selected' : ''}>${env.toUpperCase()}</option>`
+                        `<option value="${env}" ${env === currentEnv ? 'selected' : ''}>${env.toUpperCase()}</option>`
                     ).join('')}
                 </select>
             `;
@@ -44,6 +46,9 @@
             // Insert before the first form
             const firstForm = document.querySelector('form');
             firstForm.parentNode.insertBefore(stateSelector, firstForm);
+
+            // Trigger environment change to set initial values
+            window.handleEnvironmentChange(currentEnv);
         };
 
         // Add this function to handle environment changes
@@ -55,6 +60,8 @@
                     el.value = getDomain());
                 document.querySelectorAll('[id$="oauthClientId"]').forEach(el =>
                     el.value = getClientId());
+                let type = getType();
+                selectAuthType(type);
             } catch (error) {
                 console.error('Error changing environment:', error);
                 document.getElementById('envSelector').value = getCurrentEnvironment();
@@ -82,15 +89,15 @@
                 const storedAuthType = localStorage.getItem('selectedAuthType') || 'spa';
                 
                 if (window.location.hash && window.location.hash.includes('access_token')) {
-                    await showSelectedForm('regular');
+                    await selectAuthType('regular');
                     // Handle regular web auth response
                     handleRegularAuthResponse();
                 } else if (window.location.search.includes("code=")) {
-                    await showSelectedForm('spa');
+                    await selectAuthType('spa');
                     // Handle SPA auth response
                     await handleSpaAuthResponse();
                 } else {
-                    await showSelectedForm(storedAuthType);
+                    await selectAuthType(storedAuthType);
                 }
             } catch (error) {
                 console.error('Initialization error:', error);
@@ -98,12 +105,29 @@
             }
         };
 
+        async function login() {
+            // get type from local storage
+            const type = localStorage.getItem('selectedAuthType');
+
+            switch (type) {
+                case 'spa':
+                    await spaLogin();
+                    break;
+                case 'regular':
+                    await regularLogin();
+                    break;
+                default:
+                    showError('Invalid auth type selected');
+                    break;
+            }
+        }
+
         async function spaLogin() {
             try {
-                const domain = document.getElementById('spa-oauthDomain').value;
-                const clientId = document.getElementById('spa-oauthClientId').value;
-                const redirectUri = document.getElementById('spa-oauthRedirectUrl').value;
-                const appState = document.getElementById('spa-appState').value;
+                const domain = document.getElementById('oauthDomain').value;
+                const clientId = document.getElementById('oauthClientId').value;
+                const redirectUri = document.getElementById('oauthRedirectUrl').value;
+                const appState = document.getElementById('appState').value;
 
                 auth0client = await auth0.createAuth0Client({
                     domain,
@@ -124,9 +148,9 @@
 
         async function regularLogin() {
             try {
-                const domain = document.getElementById('regular-oauthDomain').value;
-                const clientId = document.getElementById('regular-oauthClientId').value;
-                const redirectUri = document.getElementById('regular-oauthRedirectUrl').value;
+                const domain = document.getElementById('oauthDomain').value;
+                const clientId = document.getElementById('oauthClientId').value;
+                const redirectUri = document.getElementById('oauthRedirectUrl').value;
 
                 webAuth = new Auth0WebAuth({
                     domain,
@@ -143,7 +167,10 @@
             }
         }
 
-        async function logout(type) {
+        async function logout() {
+            // get type from local storage
+            const type = localStorage.getItem('selectedAuthType');
+
             try {
                 if (type === 'spa' && auth0client) {
                     await auth0client.logout({
@@ -160,7 +187,10 @@
             }
         }
 
-        async function loginToAlaskaAir(type) {
+        async function loginToAlaskaAir() {
+            // get type from local storage
+            const type = localStorage.getItem('selectedAuthType');
+
             // Implement your Alaska Air specific login logic here
             console.log(`Initiating Alaska Air login for ${type}`);
             // This is a placeholder - implement actual logic based on your requirements
@@ -172,12 +202,9 @@
             errorDiv.style.display = 'block';
         }
 
-        async function showSelectedForm(type) {
+        async function selectAuthType(type) {
             // Store the selected auth type
             localStorage.setItem('selectedAuthType', type);
-            
-            document.getElementById('spaForm').style.display = type === 'spa' ? 'block' : 'none';
-            document.getElementById('regularForm').style.display = type === 'regular' ? 'block' : 'none';
             
             // Update the selector
             document.getElementById('authTypeSelector').value = type;
@@ -186,9 +213,9 @@
         // Add these new functions to handle auth responses
         async function handleSpaAuthResponse() {
             try {
-                const domain = document.getElementById('spa-oauthDomain').value;
-                const clientId = document.getElementById('spa-oauthClientId').value;
-                const redirectUri = document.getElementById('spa-oauthRedirectUrl').value;
+                const domain = document.getElementById('oauthDomain').value;
+                const clientId = document.getElementById('oauthClientId').value;
+                const redirectUri = document.getElementById('oauthRedirectUrl').value;
 
                 auth0client = await auth0.createAuth0Client({
                     domain,
@@ -209,7 +236,7 @@
                 
                 // Get and display the returned app state if any
                 const appState = await auth0client.getTokenSilently();
-                document.getElementById('spa-returnedAppState').value = appState;
+                document.getElementById('returnedAppState').value = appState;
             } catch (error) {
                 console.error('Error handling SPA auth response:', error);
                 showError('Failed to process authentication response');
@@ -218,9 +245,9 @@
 
         function handleRegularAuthResponse() {
             try {
-                const domain = document.getElementById('regular-oauthDomain').value;
-                const clientId = document.getElementById('regular-oauthClientId').value;
-                const redirectUri = document.getElementById('regular-oauthRedirectUrl').value;
+                const domain = document.getElementById('oauthDomain').value;
+                const clientId = document.getElementById('oauthClientId').value;
+                const redirectUri = document.getElementById('oauthRedirectUrl').value;
 
                 webAuth = new Auth0WebAuth({
                     domain,
@@ -238,7 +265,7 @@
                     }
                     if (authResult && authResult.accessToken) {
                         // Display the auth result
-                        document.getElementById('regular-returnedAppState').value = JSON.stringify(authResult);
+                        document.getElementById('returnedAppState').value = JSON.stringify(authResult);
                         
                         // Get user info
                         webAuth.client.userInfo(authResult.accessToken, (err, user) => {
@@ -272,9 +299,10 @@
         // Make functions available to window object
         window.spaLogin = spaLogin;
         window.regularLogin = regularLogin;
+        window.login = login;
         window.logout = logout;
         window.loginToAlaskaAir = loginToAlaskaAir;
-        window.showSelectedForm = showSelectedForm;
+        window.selectAuthType = selectAuthType;
     </script>
 </head>
 <body>
@@ -299,60 +327,36 @@
 
     <div>
         <label for="authTypeSelector">Select Authentication Type:</label>
-        <select id="authTypeSelector" onchange="showSelectedForm(this.value)">
+        <select id="authTypeSelector" onchange="selectAuthType(this.value)">
             <option value="spa">Single Page Application</option>
             <option value="regular">Regular Web Application</option>
         </select>
     </div>
 
-    <div id="spaForm" class="auth-form">
-        <form id="spa-oauthConfigForm">
-            <label for="spa-oauthDomain">Enter OAuth domain URL:</label>
-            <input type="text" id="spa-oauthDomain" name="oauthDomain" required size="50" />
+    <div id="oauthForm" class="auth-form">
+        <form id="oauthConfigForm">
+            <label for="oauthDomain">Enter OAuth domain URL:</label>
+            <input type="text" id="oauthDomain" name="oauthDomain" required size="50" />
             <br />
-            <label for="spa-oauthClientId">Enter OAuth client ID:</label>
-            <input type="text" id="spa-oauthClientId" name="oauthClientId" required size="32" />
+            <label for="oauthClientId">Enter OAuth client ID:</label>
+            <input type="text" id="oauthClientId" name="oauthClientId" required size="32" />
             <br />
-            <label for="spa-oauthRedirectUrl">Enter OAuth redirect URL:</label>
-            <input type="text" id="spa-oauthRedirectUrl" name="oauthRedirectUrl" required size="50" />
+            <label for="oauthRedirectUrl">Enter OAuth redirect URL:</label>
+            <input type="text" id="oauthRedirectUrl" name="oauthRedirectUrl" required size="50" />
             <br />
-            <label for="spa-appState">Enter App State:</label>
-            <input type="text" id="spa-appState" name="appState" placeholder='Some App State.' size="50" />
+            <label for="appState">Enter App State:</label>
+            <input type="text" id="appState" name="appState" placeholder='Some App State.' size="50" />
             <p class="note">App State is not the same as state. AppState doesn't leave the browser.</p>
             <br />
-            <div id="spa-returnedAppState-div">
-                <label for="spa-returnedAppState">The Returned App State:</label>
-                <input type="text" id="spa-returnedAppState" name="returnedAppState" size="50" readonly />
+            <div id="returnedAppState-div">
+                <label for="returnedAppState">The Returned App State:</label>
+                <input type="text" id="returnedAppState" name="returnedAppState" size="50" readonly />
             </div>
-            <p><button type="button" id="spa-loginButton" onclick="spaLogin();">Login with Auth0 (SPA)</button></p>
-            <p><button type="button" id="spa-logoutButton" onclick="logout('spa');">Logout</button></p>
-            <div id="spa-loginToAlaskaAir-div">
+            <p><button type="button" id="loginButton" onclick="login();">Login with Auth0</button></p>
+            <p><button type="button" id="logoutButton" onclick="logout();">Logout</button></p>
+            <div id="loginToAlaskaAir-div">
                 <p>www.alaskaair.com still uses login cookies. Guests are logged in with a token, but not with the cookies. Click below</p>
-                <p><button type="button" id="spa-loginToAlaskaAirButton" onclick="loginToAlaskaAir('spa');">Login to www.AlaskaAir.com</button></p>
-            </div>
-        </form>
-    </div>
-
-    <div id="regularForm" class="auth-form" style="display: none;">
-        <form id="regular-oauthConfigForm">
-            <label for="regular-oauthDomain">Enter OAuth domain URL:</label>
-            <input type="text" id="regular-oauthDomain" name="oauthDomain" required size="50" />
-            <br />
-            <label for="regular-oauthClientId">Enter OAuth client ID:</label>
-            <input type="text" id="regular-oauthClientId" name="oauthClientId" required size="32" />
-            <br />
-            <label for="regular-oauthRedirectUrl">Enter OAuth redirect URL:</label>
-            <input type="text" id="regular-oauthRedirectUrl" name="oauthRedirectUrl" required size="50" />
-            <br />
-            <div id="regular-returnedAppState-div">
-                <label for="regular-returnedAppState">Auth Response:</label>
-                <input type="text" id="regular-returnedAppState" name="returnedAppState" size="50" readonly />
-            </div>
-            <p><button type="button" id="regular-loginButton" onclick="regularLogin();">Login with Auth0 (Regular)</button></p>
-            <p><button type="button" id="regular-logoutButton" onclick="logout('regular');">Logout</button></p>
-            <div id="regular-loginToAlaskaAir-div">
-                <p>www.alaskaair.com still uses login cookies. Guests are logged in with a token, but not with the cookies. Click below</p>
-                <p><button type="button" id="regular-loginToAlaskaAirButton" onclick="loginToAlaskaAir('regular');">Login to www.AlaskaAir.com</button></p>
+                <p><button type="button" id="loginToAlaskaAirButton" onclick="loginToAlaskaAir();">Login to www.AlaskaAir.com</button></p>
             </div>
         </form>
     </div>
