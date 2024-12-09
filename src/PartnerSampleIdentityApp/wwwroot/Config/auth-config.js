@@ -28,6 +28,8 @@ let currentEnv = localStorage.getItem('selectedEnvironment') || 'test';
 
 const getEnvironments = () => Object.keys(AUTH_CONFIG);
 
+const getEnvironmentsSaml = () => Object.keys(AUTH_CONFIG).filter(env => AUTH_CONFIG[env].type === 'spa');
+
 const getCurrentConfig = () => AUTH_CONFIG[currentEnv];
 
 const getCurrentEnvironment = () => currentEnv;
@@ -67,5 +69,6 @@ export {
     getDomain,
     getType,
     getActionUrl,
-    getEnvironments
+    getEnvironments,
+    getEnvironmentsSaml
 };

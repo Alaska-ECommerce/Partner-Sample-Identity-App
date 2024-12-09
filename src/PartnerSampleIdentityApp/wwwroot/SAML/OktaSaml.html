@@ -12,7 +12,7 @@
             getDomain,
             getActionUrl,
             getCurrentEnvironment,
-            getEnvironments
+            getEnvironmentsSaml
         } from '/Config/auth-config.js';
 
         let loginType = "POST";
@@ -24,7 +24,7 @@
             stateSelector.innerHTML = `
         <label for="envSelector">Environment:</label>
         <select id="envSelector" onchange="window.handleEnvironmentChange(this.value)">
-            ${getEnvironments().map(env =>
+            ${getEnvironmentsSaml().map(env =>
                 `<option value="${env}" ${env === getCurrentEnvironment() ? 'selected' : ''}>${env.toUpperCase()}</option>`
             ).join('')}
         </select>
