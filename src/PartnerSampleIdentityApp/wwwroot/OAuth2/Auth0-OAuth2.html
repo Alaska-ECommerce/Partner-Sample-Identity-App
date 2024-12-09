@@ -24,8 +24,9 @@
         } from '/Config/auth-config.js';
 
 
-        let auth0client = null;
-        let webAuth = null;
+        // Declare the variables but don't initialize yet
+        let spaClient = null;
+        let webClient = null;
         const currentUrl = new URL(window.location.href);
         const initRedirectUri = currentUrl.origin + currentUrl.pathname;
 
@@ -68,7 +69,7 @@
             }
         };
 
-        // Modify the existing window.onload
+        // Modify window.onload to initialize clients
         window.onload = async () => {
             try {
                 // Get initial config
@@ -76,6 +77,27 @@
                 
                 // Initialize state management
                 initializeStateManagement();
+
+                const domain = getDomain();
+                const clientId = getClientId();
+
+                // Initialize SPA client
+                spaClient = await auth0.createAuth0Client({
+                    domain,
+                    clientId,
+                    authorizationParams: {
+                        redirect_uri: initRedirectUri
+                    }
+                });
+
+                // Initialize regular web auth client
+                webClient = new Auth0WebAuth({
+                    domain,
+                    clientID: clientId,
+                    redirectUri: initRedirectUri,
+                    responseType: 'token id_token',
+                    scope: 'openid profile email'
+                });
 
                 // Set form field values from auth-config
                 document.querySelectorAll('[id$="oauthDomain"]').forEach(el =>
@@ -129,7 +151,7 @@
                 const redirectUri = document.getElementById('oauthRedirectUrl').value;
                 const appState = document.getElementById('appState').value;
 
-                auth0client = await auth0.createAuth0Client({
+                spaClient = await auth0.createAuth0Client({
                     domain,
                     clientId,
                     authorizationParams: {
@@ -137,7 +159,7 @@
                     }
                 });
 
-                await auth0client.loginWithRedirect({
+                await spaClient.loginWithRedirect({
                     appState: appState || undefined
                 });
             } catch (error) {
@@ -152,7 +174,7 @@
                 const clientId = document.getElementById('oauthClientId').value;
                 const redirectUri = document.getElementById('oauthRedirectUrl').value;
 
-                webAuth = new Auth0WebAuth({
+                webClient = new Auth0WebAuth({
                     domain,
                     clientID: clientId,
                     redirectUri,
@@ -160,7 +182,7 @@
                     scope: 'openid profile email'
                 });
 
-                webAuth.authorize();
+                webClient.authorize();
             } catch (error) {
                 console.error('Regular login error:', error);
                 showError('Failed to initialize login. Please check your configuration.');
@@ -168,18 +190,21 @@
         }
 
         async function logout() {
-            // get type from local storage
             const type = localStorage.getItem('selectedAuthType');
+            const domain = document.getElementById('oauthDomain').value;
+            const returnTo = window.location.origin + window.location.pathname;
 
             try {
-                if (type === 'spa' && auth0client) {
-                    await auth0client.logout({
-                        returnTo: window.location.origin + window.location.pathname
+                if (type === 'spa' && spaClient) {
+                    await spaClient.logout({
+                        logoutParams: {
+                            returnTo,
+                            client_id: document.getElementById('oauthClientId').value
+                        }
                     });
-                } else if (type === 'regular' && webAuth) {
-                    webAuth.logout({
-                        returnTo: window.location.origin + window.location.pathname
-                    });
+                } else if (type === 'regular' && webClient) {
+                    // Use Auth0's v2 logout endpoint directly
+                    window.location.href = `https://${domain}/v2/logout?client_id=${document.getElementById('oauthClientId').value}&returnTo=${encodeURIComponent(returnTo)}`;
                 }
             } catch (error) {
                 console.error('Logout error:', error);
@@ -217,7 +242,7 @@
                 const clientId = document.getElementById('oauthClientId').value;
                 const redirectUri = document.getElementById('oauthRedirectUrl').value;
 
-                auth0client = await auth0.createAuth0Client({
+                spaClient = await auth0.createAuth0Client({
                     domain,
                     clientId,
                     authorizationParams: {
@@ -226,16 +251,16 @@
                 });
 
                 // Handle the authentication response
-                await auth0client.handleRedirectCallback();
+                await spaClient.handleRedirectCallback();
                 
                 // Get the user info
-                const user = await auth0client.getUser();
+                const user = await spaClient.getUser();
                 
                 // Display user details
                 displayUserDetails(user);
                 
                 // Get and display the returned app state if any
-                const appState = await auth0client.getTokenSilently();
+                const appState = await spaClient.getTokenSilently();
                 document.getElementById('returnedAppState').value = appState;
             } catch (error) {
                 console.error('Error handling SPA auth response:', error);
@@ -249,7 +274,7 @@
                 const clientId = document.getElementById('oauthClientId').value;
                 const redirectUri = document.getElementById('oauthRedirectUrl').value;
 
-                webAuth = new Auth0WebAuth({
+                webClient = new Auth0WebAuth({
                     domain,
                     clientID: clientId,
                     redirectUri,
@@ -257,7 +282,7 @@
                     scope: 'openid profile email'
                 });
 
-                webAuth.parseHash((err, authResult) => {
+                webClient.parseHash((err, authResult) => {
                     if (err) {
                         console.error('Error parsing hash:', err);
                         showError(err.error_description);
@@ -268,7 +293,7 @@
                         document.getElementById('returnedAppState').value = JSON.stringify(authResult);
                         
                         // Get user info
-                        webAuth.client.userInfo(authResult.accessToken, (err, user) => {
+                        webClient.client.userInfo(authResult.accessToken, (err, user) => {
                             if (err) {
                                 console.error('Error getting user info:', err);
                                 showError('Failed to get user information');

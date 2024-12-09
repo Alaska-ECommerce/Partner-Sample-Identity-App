@@ -8,7 +8,7 @@ const AUTH_CONFIG = {
     },
     qa: {
         domain: "auth0-qa.alaskaair.com",
-        clientId: "lWDO5HbEAi4ghqg4xK4Q5dOoSRwuYkUC",
+        clientId: "Z44PoNZwqGlkByWjEZA5wXfYa1yiAZOZ",
         type: "spa"
     },
     test: {
