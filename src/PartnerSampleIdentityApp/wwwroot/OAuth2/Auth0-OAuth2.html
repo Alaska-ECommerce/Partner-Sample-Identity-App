@@ -36,9 +36,10 @@
 
     <div>
         <label for="authTypeSelector">Select Authentication Type:</label>
-        <select id="authTypeSelector" onchange="window.selectAuthType(this.value)">
+        <select id="authTypeSelector">
             <option value="spa">Single Page Application</option>
             <option value="regular">Regular Web Application</option>
+            <option value="credentials">Username/Password Authentication</option>
         </select>
     </div>
 
@@ -61,13 +62,136 @@
                 <label for="returnedAppState">The Returned App State:</label>
                 <input type="text" id="returnedAppState" name="returnedAppState" size="50" readonly />
             </div>
-            <p><button type="button" id="loginButton" onclick="window.login();">Login with Auth0</button></p>
-            <p><button type="button" id="logoutButton" onclick="window.logout();">Logout</button></p>
+
+            <!-- Username/password section -->
+            <div id="credentials-section" style="display: none; margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px;">
+                <h3>Username/Password Authentication</h3>
+                <p class="note">Note: Resource Owner Password Grant must be enabled in your Auth0 application.</p>
+                <div>
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required size="40" />
+                </div>
+                <br />
+                <div>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required size="40" />
+                </div>
+                <br />
+                <div>
+                    <label for="clientSecret">Client Secret:</label>
+                    <input type="password" id="clientSecret" name="clientSecret" required size="40" />
+                    <p class="note">Client secret is required for Resource Owner Password Grant.</p>
+                </div>
+                <br />
+                <button type="button" id="credentialsLoginButton">Login with Username/Password</button>
+            </div>
+
+            <p><button type="button" id="loginButton">Login with Auth0</button></p>
+            <p><button type="button" id="logoutButton">Logout</button></p>
             <div id="loginToAlaskaAir-div">
                 <p>www.alaskaair.com still uses login cookies. Guests are logged in with a token, but not with the cookies. Click below</p>
-                <p><button type="button" id="loginToAlaskaAirButton" onclick="window.loginToAlaskaAir();">Login to www.AlaskaAir.com</button></p>
+                <p><button type="button" id="loginToAlaskaAirButton">Login to www.AlaskaAir.com</button></p>
+            </div>
+            <div id="silentAuth-div">
+                <hr />
+                <h3>Silent Authentication Testing</h3>
+                <p>Test silent authentication (prompt=none) to check for valid session</p>
+                <p><button type="button" id="silentAuthButton">Try Silent Authentication</button></p>
+                <p>
+                    <label for="pollingInterval">Session polling interval (ms):</label>
+                    <input type="number" id="pollingInterval" value="900000" min="60000" />
+                    <button type="button" id="startPollingButton">Start Polling</button>
+                    <button type="button" id="stopPollingButton">Stop Polling</button>
+                </p>
+                <p class="note">Minimum recommended interval: 900000ms (15 minutes)</p>
             </div>
         </form>
     </div>
+
+    <script>
+        // Wait for auth0 module functions to be available
+        document.addEventListener('auth0FunctionsLoaded', function (event) {
+            // Get the functions from the event detail
+            const { selectAuthType, login, logout, silentAuth, loginWithCredentials, setupSessionPolling, loginToAlaskaAir } = event.detail;
+
+            // Initialize auth type selector
+            const selector = document.getElementById('authTypeSelector');
+            if (selector) {
+                const storedType = localStorage.getItem('selectedAuthType') || 'spa';
+                selector.value = storedType;
+
+                // Update UI initially based on stored selection
+                updateAuthTypeUI(storedType);
+
+                // Add change event listener
+                selector.addEventListener('change', function () {
+                    const selectedValue = this.value;
+
+                    // Store the selection and update the UI
+                    if (selectAuthType) {
+                        selectAuthType(selectedValue);
+                    } else {
+                        localStorage.setItem('selectedAuthType', selectedValue);
+                    }
+
+                    updateAuthTypeUI(selectedValue);
+                });
+            }
+
+            // Set up button click handlers
+            document.getElementById('loginButton').addEventListener('click', function () {
+                if (login) login();
+            });
+
+            document.getElementById('logoutButton').addEventListener('click', function () {
+                if (logout) logout();
+            });
+
+            document.getElementById('silentAuthButton').addEventListener('click', function () {
+                if (silentAuth) silentAuth();
+            });
+
+            document.getElementById('credentialsLoginButton').addEventListener('click', function () {
+                // Check if function exists on window global
+                if (typeof window.loginWithCredentials === 'function') {
+                    window.loginWithCredentials();
+                }
+            });
+
+
+            document.getElementById('loginToAlaskaAirButton').addEventListener('click', function () {
+                if (loginToAlaskaAir) loginToAlaskaAir();
+            });
+
+            document.getElementById('startPollingButton').addEventListener('click', function () {
+                if (setupSessionPolling) {
+                    const interval = document.getElementById('pollingInterval').value;
+                    setupSessionPolling(interval);
+                }
+            });
+
+            document.getElementById('stopPollingButton').addEventListener('click', function () {
+                if (window.sessionPollingInterval) {
+                    clearInterval(window.sessionPollingInterval);
+                    window.sessionPollingInterval = null;
+                    alert('Polling stopped');
+                }
+            });
+        });
+
+        // Helper function to update UI based on auth type selection
+        function updateAuthTypeUI(authType) {
+            const credentialsSection = document.getElementById('credentials-section');
+            const loginButton = document.getElementById('loginButton');
+
+            if (authType === 'credentials') {
+                credentialsSection.style.display = 'block';
+                loginButton.style.display = 'none';
+            } else {
+                credentialsSection.style.display = 'none';
+                loginButton.style.display = 'block';
+            }
+        }
+    </script>
 </body>
 </html>

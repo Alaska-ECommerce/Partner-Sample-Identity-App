@@ -1,4 +1,4 @@
-﻿// main.js
+﻿// main.js update
 import {
     getCurrentConfig,
     setEnvironment,
@@ -11,7 +11,7 @@ import {
 
 import { initializeClients, getRedirectUri } from './auth-client.js';
 import { initializeStateManagement, handleEnvironmentChange, showError } from './auth-ui.js';
-import { login, logout, loginToAlaskaAir, selectAuthType } from './login-handlers.js';
+import { login, logout, loginToAlaskaAir, selectAuthType, silentAuth, setupSessionPolling, credentialsLogin, loginWithCredentials } from './login-handlers.js';
 import { handleSpaAuthResponse, handleRegularAuthResponse } from './response-handlers.js';
 
 // Setup global handlers
@@ -22,6 +22,9 @@ window.login = login;
 window.logout = logout;
 window.loginToAlaskaAir = loginToAlaskaAir;
 window.selectAuthType = selectAuthType;
+window.silentAuth = silentAuth; // Expose silent auth
+window.setupSessionPolling = setupSessionPolling; // Expose session polling
+window.loginWithCredentials = credentialsLogin; // Expose credentials login
 
 // Initialize the application
 window.onload = async () => {
@@ -60,7 +63,31 @@ window.onload = async () => {
             await handleSpaAuthResponse();
         } else {
             await selectAuthType(storedAuthType);
+
+            // Show/hide credential form based on selected auth type
+            const authTypeSelector = document.getElementById('authTypeSelector');
+            if (authTypeSelector && authTypeSelector.value === 'credentials') {
+                const credentialsSection = document.getElementById('credentials-section');
+                const loginButton = document.getElementById('loginButton');
+                if (credentialsSection) credentialsSection.style.display = 'block';
+                if (loginButton) loginButton.style.display = 'none';
+            }
         }
+
+        // Dispatch an event when the module is loaded and functions are exposed
+        document.dispatchEvent(new CustomEvent('auth0FunctionsLoaded', {
+            detail: {
+                selectAuthType,
+                login,
+                logout,
+                silentAuth,
+                loginWithCredentials,
+                credentialsLogin,
+                setupSessionPolling,
+                loginToAlaskaAir
+            }
+        }));
+
     } catch (error) {
         console.error('Initialization error:', error);
         showError('Failed to initialize the application. Please refresh the page.');
