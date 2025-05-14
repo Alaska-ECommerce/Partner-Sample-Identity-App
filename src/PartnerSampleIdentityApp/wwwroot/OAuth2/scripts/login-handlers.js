@@ -299,6 +299,41 @@ export async function selectAuthType(type) {
 }
 
 /**
+ * Saves credential fields to localStorage
+ */
+function saveCredentialFields() {
+    // Get values from form
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const clientSecret = document.getElementById('clientSecret').value;
+
+    // Store values in localStorage (consider if this is appropriate for your security requirements)
+    if (username) localStorage.setItem('auth_username', username);
+    if (password) localStorage.setItem('auth_password', password);
+    if (clientSecret) localStorage.setItem('auth_clientSecret', clientSecret);
+}
+
+/**
+ * Restores credential fields from localStorage
+ */
+export function restoreCredentialFields() {
+    // Get stored values
+    const username = localStorage.getItem('auth_username');
+    const password = localStorage.getItem('auth_password');
+    const clientSecret = localStorage.getItem('auth_clientSecret');
+
+    // Set form field values if they exist in localStorage
+    const usernameField = document.getElementById('username');
+    const passwordField = document.getElementById('password');
+    const clientSecretField = document.getElementById('clientSecret');
+
+    if (usernameField && username) usernameField.value = username;
+    if (passwordField && password) passwordField.value = password;
+    if (clientSecretField && clientSecret) clientSecretField.value = clientSecret;
+}
+
+
+/**
  * Performs login using username and password
  * @returns {Promise<void>} 
  */
@@ -307,6 +342,9 @@ export async function credentialsLogin() {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         const clientSecret = document.getElementById('clientSecret').value; // Get client secret from form
+
+        // Save credential fields to localStorage
+        saveCredentialFields();
 
         if (!username || !password) {
             showError('Username and password are required');
@@ -371,7 +409,6 @@ export async function credentialsLogin() {
         showError('Failed to authenticate with credentials. Please check your username and password.');
     }
 }
-
 
 /**
  * Performs authentication with username and password

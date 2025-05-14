@@ -112,7 +112,8 @@
         // Wait for auth0 module functions to be available
         document.addEventListener('auth0FunctionsLoaded', function (event) {
             // Get the functions from the event detail
-            const { selectAuthType, login, logout, silentAuth, loginWithCredentials, setupSessionPolling, loginToAlaskaAir } = event.detail;
+            const { selectAuthType, login, logout, silentAuth, loginWithCredentials, setupSessionPolling,
+                loginToAlaskaAir, restoreCredentialFields } = event.detail;
 
             // Initialize auth type selector
             const selector = document.getElementById('authTypeSelector');
@@ -135,8 +136,23 @@
                     }
 
                     updateAuthTypeUI(selectedValue);
+
+                    // If switched to credentials, restore saved values
+                    if (selectedValue === 'credentials' && restoreCredentialFields) {
+                        restoreCredentialFields();
+                    }
                 });
             }
+
+            // Set up credential field listeners
+            ['username', 'password', 'clientSecret'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', function () {
+                        localStorage.setItem(`auth_${id}`, this.value);
+                    });
+                }
+            });
 
             // Set up button click handlers
             document.getElementById('loginButton').addEventListener('click', function () {
@@ -157,7 +173,6 @@
                     window.loginWithCredentials();
                 }
             });
-
 
             document.getElementById('loginToAlaskaAirButton').addEventListener('click', function () {
                 if (loginToAlaskaAir) loginToAlaskaAir();

@@ -11,7 +11,7 @@ import {
 
 import { initializeClients, getRedirectUri } from './auth-client.js';
 import { initializeStateManagement, handleEnvironmentChange, showError } from './auth-ui.js';
-import { login, logout, loginToAlaskaAir, selectAuthType, silentAuth, setupSessionPolling, credentialsLogin, loginWithCredentials } from './login-handlers.js';
+import { login, logout, loginToAlaskaAir, selectAuthType, silentAuth, setupSessionPolling, credentialsLogin, loginWithCredentials, restoreCredentialFields } from './login-handlers.js';
 import { handleSpaAuthResponse, handleRegularAuthResponse } from './response-handlers.js';
 
 // Setup global handlers
@@ -72,7 +72,13 @@ window.onload = async () => {
                 if (credentialsSection) credentialsSection.style.display = 'block';
                 if (loginButton) loginButton.style.display = 'none';
             }
+
+            // Restore credential fields from localStorage
+            restoreCredentialFields();
         }
+
+        // Setup input change listeners for credential fields
+        setupCredentialFieldListeners();
 
         // Dispatch an event when the module is loaded and functions are exposed
         document.dispatchEvent(new CustomEvent('auth0FunctionsLoaded', {
@@ -84,7 +90,8 @@ window.onload = async () => {
                 loginWithCredentials,
                 credentialsLogin,
                 setupSessionPolling,
-                loginToAlaskaAir
+                loginToAlaskaAir,
+                restoreCredentialFields
             }
         }));
 
@@ -93,3 +100,22 @@ window.onload = async () => {
         showError('Failed to initialize the application. Please refresh the page.');
     }
 };
+
+/**
+ * Sets up event listeners for credential fields to save values on change
+ */
+function setupCredentialFieldListeners() {
+    const fields = ['username', 'password', 'clientSecret'];
+
+    fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('change', function () {
+                // Save the changed value to localStorage
+                if (this.value) {
+                    localStorage.setItem(`auth_${fieldId}`, this.value);
+                }
+            });
+        }
+    });
+}
