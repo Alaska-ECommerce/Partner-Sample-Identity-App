@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 10px;
+            background-color: #f9f9f9;
+        }
+        button {
+            margin-right: 10px;
+            padding: 8px 12px;
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0062ad;
+        }
+        .success-message {
+            background-color: #dff0d8;
+            border-color: #d6e9c6;
+            color: #3c763d;
+            padding: 15px;
+        }
+        .error-message {
+            background-color: #f2dede;
+            border-color: #ebccd1;
+            color: #a94442;
+            padding: 15px;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Template System Test</h1>
+    <p>This page tests the template loading system to ensure templates are loaded and rendered correctly.</p>
+    
+    <div>
+        <button id="testSuccess">Test Success Template</button>
+        <button id="testError">Test Error Template</button>
+        <button id="testLoading">Test Loading Template</button>
+    </div>
+    
+    <div class="result" id="resultContainer"></div>
+    
+    <script type="module">
+        import { loadTemplate } from '/OAuth2/scripts/template-loader.js';
+        
+        document.getElementById('testSuccess').addEventListener('click', async () => {
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.textContent = 'Loading success template...';
+            
+            try {
+                const html = await loadTemplate('silent-auth-success', {
+                    authMethod: 'test method',
+                    userJson: JSON.stringify({ name: 'Test User', email: 'test@example.com' }, null, 2)
+                });
+                resultContainer.innerHTML = html;
+            } catch (error) {
+                resultContainer.textContent = `Error loading template: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('testError').addEventListener('click', async () => {
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.textContent = 'Loading error template...';
+            
+            try {
+                const html = await loadTemplate('silent-auth-failed', {
+                    error: 'test_error',
+                    errorDescription: 'This is a test error description',
+                    additionalHelp: ''
+                });
+                resultContainer.innerHTML = html;
+                
+                // Also load help template
+                const helpHtml = await loadTemplate('login-required-help');
+                const errorMessage = resultContainer.querySelector('.error-message');
+                if (errorMessage) {
+                    errorMessage.innerHTML += helpHtml;
+                }
+            } catch (error) {
+                resultContainer.textContent = `Error loading template: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('testLoading').addEventListener('click', async () => {
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.textContent = 'Loading loading template...';
+            
+            try {
+                const html = await loadTemplate('loading');
+                resultContainer.innerHTML = html;
+            } catch (error) {
+                resultContainer.textContent = `Error loading template: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

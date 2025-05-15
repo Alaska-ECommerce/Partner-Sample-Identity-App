@@ -1,6 +1,7 @@
 ﻿// login-handlers.js
 import { showError } from './auth-ui.js';
 import { getClients, updateClients } from './auth-client.js';
+import { loadTemplate, loadTemplateSync } from './template-loader.js';
 
 /**
  * Gets OAuth configuration values from the form
@@ -392,8 +393,7 @@ function displaySuccessfulAuth(resultElement, result) {
         localStorage.getItem('auth_access_token') === result.token.access_token) {
         authMethod = "stored token from credential login";
     }
-    
-    // Format user data for display, protecting sensitive information
+      // Format user data for display, protecting sensitive information
     const displayUser = { ...result.user };
     if (displayUser.email) {
         // Mask part of the email for privacy in UI
@@ -406,13 +406,23 @@ function displaySuccessfulAuth(resultElement, result) {
         }
     }
     
-    resultElement.innerHTML = `
-        <div class="success-message">
-            <h4>Silent Authentication Successful</h4>
-            <p>User is authenticated without interaction using ${authMethod}</p>
-            <pre>${JSON.stringify(displayUser, null, 2)}</pre>
-        </div>
-    `;
+    // Load the template with variables
+    loadTemplate('silent-auth-success', {
+        authMethod: authMethod,
+        userJson: JSON.stringify(displayUser, null, 2)
+    }).then(html => {
+        resultElement.innerHTML = html;
+    }).catch(err => {
+        console.error('Error loading success template:', err);
+        // Fall back to inline HTML if template fails to load
+        resultElement.innerHTML = `
+            <div class="success-message">
+                <h4>Silent Authentication Successful</h4>
+                <p>User is authenticated without interaction using ${authMethod}</p>
+                <pre>${JSON.stringify(displayUser, null, 2)}</pre>
+            </div>
+        `;
+    });
     
     // Update UI elements with user info
     updateContentJwt(result.user);
@@ -468,41 +478,67 @@ function displayFailedAuth(resultElement, result) {
         'Auth Type:', authType, 
         'Has Stored Token:', hasStoredToken,
         'Was Logged In:', wasLoggedIn);
-    
-    // Check for common error cases and provide helpful context
+      // Check for common error cases and provide helpful context
     let additionalHelp = '';
+    let loadHelpPromises = [];
     
+    // Load help templates as needed
     if (hasStoredToken) {
-        additionalHelp += `
-            <div class="troubleshooting-tips">
-                <p><strong>Troubleshooting:</strong></p>
-                <p>A stored token was found but could not be used for authentication.</p>
-                <p>This likely means the token has expired or is invalid.</p>
-                <button id="clearTokenButton" style="margin-top:10px">Clear Stored Token</button>
-            </div>
-        `;
+        const tokenHelp = loadTemplate('token-troubleshooting');
+        loadHelpPromises.push(tokenHelp);
+        tokenHelp.then(html => {
+            additionalHelp += html;
+        });
     }
     
     if (result.error === 'login_required') {
-        additionalHelp += `
-            <div class="troubleshooting-tips">
-                <p>This error typically means you don't have an active session.</p>
-                <p>Try logging in using username/password first.</p>
-            </div>
-        `;
+        const loginHelp = loadTemplate('login-required-help');
+        loadHelpPromises.push(loginHelp);
+        loginHelp.then(html => {
+            additionalHelp += html;
+        });
     }
     
-    resultElement.innerHTML = `
-        <div class="error-message">
-            <h4>Silent Authentication Failed</h4>
-            <p>Error: ${result.error}</p>
-            <p>${result.errorDescription || ''}</p>
-            <p>The user needs to log in interactively.</p>
-            ${additionalHelp}
-        </div>
-    `;
+    // Load main error template and update with all help content when ready
+    Promise.all(loadHelpPromises)
+        .then(() => {
+            return loadTemplate('silent-auth-failed', {
+                error: result.error,
+                errorDescription: result.errorDescription || '',
+                additionalHelp: additionalHelp
+            });
+        })
+        .then(html => {
+            resultElement.innerHTML = html;
+            
+            // Add event listener to clear token button if it exists
+            const clearTokenButton = document.getElementById('clearTokenButton');
+            if (clearTokenButton) {
+                clearTokenButton.addEventListener('click', () => {
+                    localStorage.removeItem('auth_access_token');
+                    localStorage.removeItem('auth_token_expires_at');
+                    localStorage.removeItem('isLoggedIn');
+                    alert('Stored token cleared successfully');
+                    clearTokenButton.disabled = true;
+                    clearTokenButton.textContent = 'Token Cleared';
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Error loading error templates:', err);
+            // Fall back to inline HTML if templates fail to load
+            resultElement.innerHTML = `
+                <div class="error-message">
+                    <h4>Silent Authentication Failed</h4>
+                    <p>Error: ${result.error}</p>
+                    <p>${result.errorDescription || ''}</p>
+                    <p>The user needs to log in interactively.</p>
+                    ${additionalHelp}
+                </div>
+            `;
+        });
     
-    // Add event listener to clear token button if it exists
+    // Note: Event listener for clear token button will be added after template is loaded
     const clearTokenButton = document.getElementById('clearTokenButton');
     if (clearTokenButton) {
         clearTokenButton.addEventListener('click', () => {
@@ -761,14 +797,19 @@ function getOrCreateCredentialsResultElement() {
             resultElement.id = 'credentialsAuthResult';
             resultElement.className = 'result-display json-result';
             existingContainer.appendChild(resultElement);
-        } else {
-            const newContainer = document.createElement('div');
+        } else {            const newContainer = document.createElement('div');
             newContainer.className = 'result-container';
-            newContainer.innerHTML = `
-                <h4>Authentication Result</h4>
-                <pre id="credentialsAuthResult" class="result-display json-result"></pre>
-            `;
-
+            
+            // Try to load template, or use default HTML if it fails
+            let credentialsResultHtml = loadTemplateSync('credentials-auth-result');
+            if (!credentialsResultHtml) {
+                credentialsResultHtml = `
+                    <h4>Authentication Result</h4>
+                    <pre id="credentialsAuthResult" class="result-display json-result"></pre>
+                `;
+            }
+            
+            newContainer.innerHTML = credentialsResultHtml;
             const credentialsSection = document.getElementById('credentials-section');
             if (credentialsSection) {
                 credentialsSection.appendChild(newContainer);
@@ -802,15 +843,21 @@ function displayFailedCredentialsAuth(result) {
     // Update result area with the error
     const resultElement = document.getElementById('credentialsAuthResult');
     if (!resultElement) return;
-    
-    resultElement.innerHTML = `
-        <div class="error-message">
-            <h4>Authentication Error</h4>
-            <p>${errorMessage}</p>
-        </div>
-    `;
-    
-    addCredentialErrorHints(resultElement, errorMessage);
+      loadTemplate('auth-error', { errorMessage })
+        .then(html => {
+            resultElement.innerHTML = html;
+            addCredentialErrorHints(resultElement, errorMessage);
+        })
+        .catch(err => {
+            console.error('Error loading auth error template:', err);
+            resultElement.innerHTML = `
+                <div class="error-message">
+                    <h4>Authentication Error</h4>
+                    <p>${errorMessage}</p>
+                </div>
+            `;
+            addCredentialErrorHints(resultElement, errorMessage);
+        });
 }
 
 /**
@@ -826,16 +873,23 @@ function addCredentialErrorHints(resultElement, errorMessage) {
         errorMessage.includes('invalid') ||
         errorMessage.toLowerCase().includes('wrong')) {
         
-        resultElement.innerHTML += `
-        <div class="error-help">
-            <p><strong>Possible causes:</strong></p>
-            <ul>
-                <li>Incorrect username or password</li>
-                <li>Invalid client secret</li>
-                <li>Resource Owner Password Grant not enabled for this Auth0 application</li>
-                <li>User doesn't exist in the Auth0 database</li>
-            </ul>
-        </div>`;
+        loadTemplate('auth-error-help')
+            .then(html => {
+                resultElement.innerHTML += html;
+            })
+            .catch(err => {
+                console.error('Error loading auth error help template:', err);
+                resultElement.innerHTML += `
+                <div class="error-help">
+                    <p><strong>Possible causes:</strong></p>
+                    <ul>
+                        <li>Incorrect username or password</li>
+                        <li>Invalid client secret</li>
+                        <li>Resource Owner Password Grant not enabled for this Auth0 application</li>
+                        <li>User doesn't exist in the Auth0 database</li>
+                    </ul>
+                </div>`;
+            });
     }
     
     // Add hint for grant_type issues
@@ -843,20 +897,27 @@ function addCredentialErrorHints(resultElement, errorMessage) {
         errorMessage.includes('not enabled') || 
         errorMessage.includes('not allowed')) {
         
-        resultElement.innerHTML += `
-        <div class="error-help">
-            <p><strong>Resource Owner Password Grant Not Enabled</strong></p>
-            <p>You need to enable the "Resource Owner Password Flow" for your Auth0 application:</p>
-            <ol>
-                <li>Log into your Auth0 dashboard</li>
-                <li>Go to "Applications" > your application</li>
-                <li>Go to "Settings" tab</li>
-                <li>Scroll down to "Advanced Settings"</li>
-                <li>Go to "Grant Types" tab</li>
-                <li>Check "Password" option</li>
-                <li>Click "Save Changes"</li>
-            </ol>
-        </div>`;
+        loadTemplate('grant-type-help')
+            .then(html => {
+                resultElement.innerHTML += html;
+            })
+            .catch(err => {
+                console.error('Error loading grant type help template:', err);
+                resultElement.innerHTML += `
+                <div class="error-help">
+                    <p><strong>Resource Owner Password Grant Not Enabled</strong></p>
+                    <p>You need to enable the "Resource Owner Password Flow" for your Auth0 application:</p>
+                    <ol>
+                        <li>Log into your Auth0 dashboard</li>
+                        <li>Go to "Applications" > your application</li>
+                        <li>Go to "Settings" tab</li>
+                        <li>Scroll down to "Advanced Settings"</li>
+                        <li>Go to "Grant Types" tab</li>
+                        <li>Check "Password" option</li>
+                        <li>Click "Save Changes"</li>
+                    </ol>
+                </div>`;
+            });
     }
 }
 
@@ -871,16 +932,22 @@ function showCredentialLoginLoading() {
     // Update button state
     loginButton.disabled = true;
     loginButton.textContent = 'Authenticating...';
-    
-    // Show loading spinner
+      // Show loading spinner
     const resultElement = document.getElementById('credentialsAuthResult');
     if (resultElement) {
-        resultElement.innerHTML = `
-        <div class="loading-container">
-            <div class="loader"></div>
-            <div class="loading-text">Authenticating with Auth0...</div>
-        </div>
-        `;
+        loadTemplate('loading')
+            .then(html => {
+                resultElement.innerHTML = html;
+            })
+            .catch(err => {
+                console.error('Error loading loading template:', err);
+                resultElement.innerHTML = `
+                <div class="loading-container">
+                    <div class="loader"></div>
+                    <div class="loading-text">Authenticating with Auth0...</div>
+                </div>
+                `;
+            });
     }
     
     return { loginButton, originalButtonText };
@@ -888,10 +955,12 @@ function showCredentialLoginLoading() {
 
 /**
  * Performs login using username and password
+ * @returns {Promise<Object>} Authentication result
  */
 export async function credentialsLogin() {
+    console.log('Starting credentials login...');
+    
     try {
-        console.log('Starting credentials login...');
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         const clientSecret = document.getElementById('clientSecret').value;
@@ -904,13 +973,20 @@ export async function credentialsLogin() {
             showError(configValidation.error);
             const resultElement = document.getElementById('credentialsAuthResult');
             if (resultElement) {
-                resultElement.innerHTML = `
-                <div class="error-message">
-                    <h4>Configuration Error</h4>
-                    <p>${configValidation.error}</p>
-                </div>`;
+                loadTemplate('config-error', { errorMessage: configValidation.error })
+                    .then(html => {
+                        resultElement.innerHTML = html;
+                    })
+                    .catch(err => {
+                        console.error('Error loading config error template:', err);
+                        resultElement.innerHTML = `
+                        <div class="error-message">
+                            <h4>Configuration Error</h4>
+                            <p>${configValidation.error}</p>
+                        </div>`;
+                    });
             }
-            return;
+            return { success: false, error: 'invalid_configuration', errorDescription: configValidation.error };
         }
 
         // Save credentials to localStorage
@@ -919,24 +995,23 @@ export async function credentialsLogin() {
         // Validate inputs
         const inputValidation = validateCredentialInputs(username, password, clientSecret);
         if (!inputValidation.isValid) {
-            return;
+            return { success: false, error: 'invalid_input', errorDescription: inputValidation.error };
         }
 
-        // Show loading state
-        const { loginButton, originalButtonText } = showCredentialLoginLoading();
+        // No need to show loading state here as it's handled in the button click handler
         
-        try {
-            // Perform login
-            const result = await loginWithCredentials(username, password, clientSecret);
-            updateCredentialsAuthUI(result);
-        } finally {
-            // Restore button state
-            loginButton.disabled = false;
-            loginButton.textContent = originalButtonText;
-        }
+        // Perform login
+        const result = await loginWithCredentials(username, password, clientSecret);
+        updateCredentialsAuthUI(result);
+        return result;
     } catch (error) {
         console.error('Credential login error:', error);
         showError('Failed to authenticate with credentials. Please check your username and password.');
+        return { 
+            success: false, 
+            error: 'login_failed', 
+            errorDescription: error.message || 'Failed to authenticate with credentials' 
+        };
     }
 }
 

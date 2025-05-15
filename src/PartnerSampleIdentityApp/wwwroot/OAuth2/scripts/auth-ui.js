@@ -1,19 +1,32 @@
 ﻿// auth-ui.js
 import { selectAuthType } from './login-handlers.js';
+import { loadTemplate, loadTemplateSync } from './template-loader.js';
 
 export function initializeStateManagement(getCurrentEnvironment, getEnvironments, setEnvironment, getDomain, getClientId, getType) {
     // Create environment selector
     const stateSelector = document.createElement('div');
     stateSelector.className = 'environment-selector';
     let currentEnv = getCurrentEnvironment();
-    stateSelector.innerHTML = `
-        <label for="envSelector">Environment:</label>
-        <select id="envSelector" onchange="window.handleEnvironmentChange(this.value)">
-            ${getEnvironments().map(env =>
+    
+    // Create environment options HTML
+    const envOptionsHtml = getEnvironments().map(env =>
         `<option value="${env}" ${env === currentEnv ? 'selected' : ''}>${env.toUpperCase()}</option>`
-    ).join('')}
-        </select>
-    `;
+    ).join('');
+    
+    // Try to load template
+    loadTemplate('environment-selector', { envOptions: envOptionsHtml })
+        .then(html => {
+            stateSelector.innerHTML = html;
+        })
+        .catch(err => {
+            console.error('Error loading environment selector template:', err);
+            stateSelector.innerHTML = `
+                <label for="envSelector">Environment:</label>
+                <select id="envSelector" onchange="window.handleEnvironmentChange(this.value)">
+                    ${envOptionsHtml}
+                </select>
+            `;
+        });
 
     // Insert before the first form
     const firstForm = document.querySelector('form');
