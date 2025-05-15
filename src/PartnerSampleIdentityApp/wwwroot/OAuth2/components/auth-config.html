@@ -1,0 +1,45 @@
+﻿<div class="auth-section">
+    <h3>Authentication Configuration</h3>
+    <div class="input-group">
+        <label for="authTypeSelector">Select Authentication Type:</label>
+        <select id="authTypeSelector">
+            <option value="spa">Single Page Application</option>
+            <option value="regular">Regular Web Application</option>
+        </select>
+    </div>
+
+    <form id="oauthConfigForm">
+        <!-- OAuth Configuration Inputs -->
+        <div class="input-group">
+            <label for="oauthDomain">OAuth Domain URL:</label>
+            <input type="text" id="oauthDomain" name="oauthDomain" required size="50" />
+        </div>
+
+        <div class="input-group">
+            <label for="oauthClientId">OAuth Client ID:</label>
+            <input type="text" id="oauthClientId" name="oauthClientId" required size="32" />
+        </div>
+
+        <div class="input-group">
+            <label for="oauthRedirectUrl">OAuth Redirect URL:</label>
+            <input type="text" id="oauthRedirectUrl" name="oauthRedirectUrl" required size="50" />
+        </div>
+
+        <div class="input-group">
+            <label for="appState">Application State:</label>
+            <input type="text" id="appState" name="appState" placeholder='Some App State.' size="50" />
+            <p class="note">App State is not the same as state. AppState doesn't leave the browser.</p>
+        </div>
+
+        <div id="returnedAppState-div" class="input-group">
+            <label for="returnedAppState">Returned App State:</label>
+            <input type="text" id="returnedAppState" name="returnedAppState" size="50" readonly />
+        </div>
+
+        <!-- Primary Authentication Buttons -->
+        <div class="button-container">
+            <button type="button" id="loginButton">Login with Auth0</button>
+            <button type="button" id="logoutButton">Logout</button>
+        </div>
+    </form>
+</div>

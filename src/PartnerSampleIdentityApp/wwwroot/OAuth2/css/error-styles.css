@@ -1,0 +1,56 @@
+/* Error message styling for credential auth */
+.error-message {
+    background-color: #ffeeee;
+    border: 1px solid #ffcccc;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+    color: #cc0000;
+}
+
+.error-message h4 {
+    margin-top: 0;
+    color: #cc0000;
+}
+
+.error-help {
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.error-help ul {
+    margin: 5px 0;
+    padding-left: 20px;
+}
+
+.error-help li {
+    margin-bottom: 3px;
+}
+
+.info-message {
+    color: #666;
+    font-style: italic;
+}
+
+.success-message {
+    background-color: #ebf7ed;
+    border-left: 4px solid #28a745;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+}
+
+.success-message h4 {
+    color: #28a745;
+    margin-top: 0;
+}
+
+.details {
+    background-color: #f8f8f8;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-size: 0.9em;
+}

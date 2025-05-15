@@ -11,7 +11,7 @@ import {
 
 import { initializeClients, getRedirectUri } from './auth-client.js';
 import { initializeStateManagement, handleEnvironmentChange, showError } from './auth-ui.js';
-import { login, logout, loginToAlaskaAir, selectAuthType, silentAuth, setupSessionPolling, credentialsLogin, loginWithCredentials, restoreCredentialFields } from './login-handlers.js';
+import { login, logout, loginToAlaskaAir, selectAuthType, silentAuth, setupSessionPolling, credentialsLogin, restoreCredentialFields } from './login-handlers.js';
 import { handleSpaAuthResponse, handleRegularAuthResponse } from './response-handlers.js';
 
 // Setup global handlers
@@ -24,10 +24,12 @@ window.loginToAlaskaAir = loginToAlaskaAir;
 window.selectAuthType = selectAuthType;
 window.silentAuth = silentAuth; // Expose silent auth
 window.setupSessionPolling = setupSessionPolling; // Expose session polling
-window.loginWithCredentials = credentialsLogin; // Expose credentials login
+window.loginWithCredentials = credentialsLogin; // Expose credentials login (legacy name)
+window.credentialsLogin = credentialsLogin; // Expose credentials login with correct name
+window.restoreCredentialFields = restoreCredentialFields; // Expose restore credentials
 
-// Initialize the application
-window.onload = async () => {
+// Listen for components loaded event and then initialize the auth functionality
+document.addEventListener('componentsLoaded', async () => {
     try {
         // Get initial config
         const config = getCurrentConfig();
@@ -63,34 +65,23 @@ window.onload = async () => {
             await handleSpaAuthResponse();
         } else {
             await selectAuthType(storedAuthType);
-
-            // Show/hide credential form based on selected auth type
-            const authTypeSelector = document.getElementById('authTypeSelector');
-            if (authTypeSelector && authTypeSelector.value === 'credentials') {
-                const credentialsSection = document.getElementById('credentials-section');
-                const loginButton = document.getElementById('loginButton');
-                if (credentialsSection) credentialsSection.style.display = 'block';
-                if (loginButton) loginButton.style.display = 'none';
-            }
-
+            
             // Restore credential fields from localStorage
             restoreCredentialFields();
         }
 
-        // Setup input change listeners for credential fields
-        setupCredentialFieldListeners();
-
         // Dispatch an event when the module is loaded and functions are exposed
+        console.log('Dispatching auth0FunctionsLoaded event with credentialsLogin:', !!credentialsLogin);
         document.dispatchEvent(new CustomEvent('auth0FunctionsLoaded', {
             detail: {
                 selectAuthType,
                 login,
                 logout,
                 silentAuth,
-                loginWithCredentials,
-                credentialsLogin,
                 setupSessionPolling,
                 loginToAlaskaAir,
+                credentialsLogin, // Make sure this is included
+                loginWithCredentials: credentialsLogin, // Add alias for backward compatibility
                 restoreCredentialFields
             }
         }));
@@ -99,23 +90,15 @@ window.onload = async () => {
         console.error('Initialization error:', error);
         showError('Failed to initialize the application. Please refresh the page.');
     }
+});
+
+// Fall back to the original initialization if components loaded event doesn't fire
+window.onload = async () => {
+    // Only run this initialization if components haven't been loaded yet
+    if (!document.querySelector('.auth-section')) {
+        console.warn('Component loading may have failed, falling back to direct initialization');
+
+        const event = new CustomEvent('componentsLoaded');
+        document.dispatchEvent(event);
+    }
 };
-
-/**
- * Sets up event listeners for credential fields to save values on change
- */
-function setupCredentialFieldListeners() {
-    const fields = ['username', 'password', 'clientSecret'];
-
-    fields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.addEventListener('change', function () {
-                // Save the changed value to localStorage
-                if (this.value) {
-                    localStorage.setItem(`auth_${fieldId}`, this.value);
-                }
-            });
-        }
-    });
-}

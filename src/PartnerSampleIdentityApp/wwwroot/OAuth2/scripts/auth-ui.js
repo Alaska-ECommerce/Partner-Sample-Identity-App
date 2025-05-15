@@ -52,6 +52,9 @@ export function displayUserDetails(user) {
         const contentJwt = document.getElementById('content-jwt');
         if (contentJwt) {
             contentJwt.textContent = JSON.stringify(user, null, 2);
+            contentJwt.className = 'result-display json-result';
+            contentJwt.style.textAlign = 'left';
+            contentJwt.style.whiteSpace = 'pre';
         }
     } catch (error) {
         console.error('Error displaying user details:', error);

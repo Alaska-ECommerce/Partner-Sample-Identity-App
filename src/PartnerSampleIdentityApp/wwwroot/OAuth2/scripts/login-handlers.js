@@ -13,9 +13,6 @@ export async function login() {
         case 'regular':
             await regularLogin();
             break;
-        case 'credentials':
-            await credentialsLogin();
-            break;
         default:
             showError('Invalid auth type selected');
             break;
@@ -76,7 +73,9 @@ export async function regularLogin() {
  */
 export async function silentAuth() {
     try {
-        const type = localStorage.getItem('selectedAuthType');
+        // Get the selected authentication type, defaulting to 'spa' if not set
+        const type = localStorage.getItem('selectedAuthType') || 'spa';
+        
         const domain = document.getElementById('oauthDomain').value;
         const clientId = document.getElementById('oauthClientId').value;
         const redirectUri = document.getElementById('oauthRedirectUrl').value;
@@ -156,9 +155,15 @@ export async function silentAuth() {
                         }
                     }
                 });
+            });        } else {
+            // Handle unsupported auth types more gracefully
+            console.warn(`Silent authentication not supported for auth type: ${type}`);
+            displaySilentAuthResult({
+                success: false,
+                error: 'unsupported_auth_type',
+                errorDescription: `Silent authentication is only supported for 'spa' and 'regular' auth types`
             });
-        } else {
-            throw new Error('Invalid auth type for silent authentication');
+            return { success: false, error: { error: 'unsupported_auth_type' } };
         }
     } catch (error) {
         console.error('Silent auth setup error:', error);
@@ -166,6 +171,7 @@ export async function silentAuth() {
         return { success: false, error };
     }
 }
+
 
 /**
  * Displays the result of a silent authentication attempt
@@ -190,7 +196,13 @@ function displaySilentAuthResult(result) {
                     <pre>${JSON.stringify(result.user, null, 2)}</pre>
                 </div>
             `;
-            document.getElementById('content-jwt').textContent = JSON.stringify(result.user, null, 2);
+            const contentJwt = document.getElementById('content-jwt');
+            if (contentJwt) {
+                contentJwt.textContent = JSON.stringify(result.user, null, 2);
+                contentJwt.className = 'result-display json-result';
+                contentJwt.style.textAlign = 'left';
+                contentJwt.style.whiteSpace = 'pre';
+            }
 
             // Update app state if available
             if (document.getElementById('returnedAppState')) {
@@ -337,11 +349,53 @@ export function restoreCredentialFields() {
  * Performs login using username and password
  * @returns {Promise<void>} 
  */
+/**
+ * Validates Auth0 configuration parameters
+ * @returns {Object} Validation result with success flag and error message if applicable
+ */
+function validateAuth0Config() {
+    const domain = document.getElementById('oauthDomain').value;
+    const clientId = document.getElementById('oauthClientId').value;
+    
+    if (!domain || !domain.includes('.')) {
+        return { 
+            isValid: false, 
+            error: 'Invalid Auth0 domain. Please provide a valid domain (e.g., your-tenant.auth0.com)' 
+        };
+    }
+    
+    if (!clientId) {
+        return {
+            isValid: false,
+            error: 'Client ID is required. Please provide a valid Auth0 Client ID'
+        };
+    }
+    
+    return { isValid: true };
+}
+
 export async function credentialsLogin() {
     try {
+        console.log('Starting credentials login...');
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         const clientSecret = document.getElementById('clientSecret').value; // Get client secret from form
+        console.log(`Username provided: ${username ? 'Yes' : 'No'}, Password provided: ${password ? 'Yes' : 'No'}, Client Secret provided: ${clientSecret ? 'Yes' : 'No'}`);
+
+        // Check Auth0 configuration validity
+        const configValidation = validateAuth0Config();
+        if (!configValidation.isValid) {
+            showError(configValidation.error);
+            const resultElement = document.getElementById('credentialsAuthResult');
+            if (resultElement) {
+                resultElement.innerHTML = `
+                <div class="error-message">
+                    <h4>Configuration Error</h4>
+                    <p>${configValidation.error}</p>
+                </div>`;
+            }
+            return;
+        }
 
         // Save credential fields to localStorage
         saveCredentialFields();
@@ -354,24 +408,43 @@ export async function credentialsLogin() {
         if (!clientSecret) {
             showError('Client secret is required for Resource Owner Password Grant');
             return;
-        }
-
-        // Show loading state
+        }        // Show loading state
         const loginButton = document.getElementById('credentialsLoginButton');
         const originalButtonText = loginButton.textContent;
         loginButton.disabled = true;
         loginButton.textContent = 'Authenticating...';
+        
+        // Show loading spinner in the result area
+        const resultElement = document.getElementById('credentialsAuthResult');
+        if (resultElement) {
+            resultElement.innerHTML = `
+            <div class="loading-container">
+                <div class="loader"></div>
+                <div class="loading-text">Authenticating with Auth0...</div>
+            </div>
+            `;
+        }
 
         try {
             const result = await loginWithCredentials(username, password, clientSecret);
 
-            if (result.success) {
-                // Display user information
+            if (result.success) {                // Display user information and token response
                 const user = result.result?.user || result.result;
-                document.getElementById('content-jwt').textContent = JSON.stringify(user, null, 2);
-
-                // Format JSON with proper indentation
-                const formattedJson = JSON.stringify(user, null, 2);
+                const token = result.result?.token || {};
+                  // Store user information in content-jwt element for other components
+                const contentJwt = document.getElementById('content-jwt');
+                if (contentJwt) {
+                    contentJwt.textContent = JSON.stringify(user, null, 2);
+                    contentJwt.className = 'result-display json-result';
+                    contentJwt.style.textAlign = 'left';
+                    contentJwt.style.whiteSpace = 'pre';
+                }
+                
+                // Format the complete auth response (user info + token) with proper indentation
+                const formattedJson = JSON.stringify({
+                    user: user,
+                    token: token
+                }, null, 2);
 
                 // Get or create the credentials result element
                 let resultElement = document.getElementById('credentialsAuthResult');
@@ -399,11 +472,12 @@ export async function credentialsLogin() {
                             resultElement = newContainer.querySelector('#credentialsAuthResult');
                         }
                     }
-                }
-
-                // Update the result with well-formatted JSON
+                }                // Update the result with well-formatted, left-aligned JSON
                 if (resultElement) {
                     resultElement.textContent = formattedJson;
+                    resultElement.className = 'result-display json-result';
+                    resultElement.style.textAlign = 'left';
+                    resultElement.style.whiteSpace = 'pre';
                 }
 
                 // Set logged in state
@@ -413,14 +487,51 @@ export async function credentialsLogin() {
                 if (document.getElementById('returnedAppState')) {
                     document.getElementById('returnedAppState').value =
                         typeof result.token === 'string' ? result.token : JSON.stringify(result.result);
-                }
-            } else {
-                showError(`Login failed: ${result.errorDescription || result.error || 'Unknown error'}`);
+                }            } else {
+                const errorMessage = result.errorDescription || result.error || 'Unknown error';
+                console.error('Login failed:', errorMessage);
+                showError(`Login failed: ${errorMessage}`);
 
                 // Also update the result area with the error
                 const resultElement = document.getElementById('credentialsAuthResult');
-                if (resultElement) {
-                    resultElement.textContent = `Authentication Error: ${result.errorDescription || result.error || 'Unknown error'}`;
+                if (resultElement) {                    resultElement.innerHTML = `<div class="error-message">
+                        <h4>Authentication Error</h4>
+                        <p>${errorMessage}</p>
+                    </div>`;
+                      // Add a hint if it appears to be a credential error
+                    if (errorMessage.includes('password') || errorMessage.includes('credentials') || 
+                        errorMessage.includes('unauthorized') || errorMessage.includes('invalid') ||
+                        errorMessage.toLowerCase().includes('wrong')) {
+                        resultElement.innerHTML += `
+                        <div class="error-help">
+                            <p><strong>Possible causes:</strong></p>
+                            <ul>
+                                <li>Incorrect username or password</li>
+                                <li>Invalid client secret</li>
+                                <li>Resource Owner Password Grant not enabled for this Auth0 application</li>
+                                <li>User doesn't exist in the Auth0 database</li>
+                            </ul>
+                        </div>`;
+                    }
+                    
+                    // Add specific hint for grant_type not enabled
+                    if (errorMessage.includes('grant_type') || 
+                        errorMessage.includes('not enabled') || 
+                        errorMessage.includes('not allowed')) {
+                        resultElement.innerHTML += `
+                        <div class="error-help">
+                            <p><strong>Resource Owner Password Grant Not Enabled</strong></p>
+                            <p>You need to enable the "Resource Owner Password Flow" for your Auth0 application:</p>
+                            <ol>
+                                <li>Log into your Auth0 dashboard</li>
+                                <li>Go to "Applications" > your application</li>
+                                <li>Go to "Settings" tab</li>
+                                <li>Scroll down to "Advanced Settings"</li>
+                                <li>Go to "Grant Types" tab</li>
+                                <li>Check "Password" option</li>
+                                <li>Click "Save Changes"</li>
+                            </ol>                        </div>`;
+                    }
                 }
             }
         } finally {
@@ -447,10 +558,12 @@ export async function loginWithCredentials(username, password, clientSecret) {
     try {
         const domain = document.getElementById('oauthDomain').value;
         const clientId = document.getElementById('oauthClientId').value;
+        console.log(`Auth0 Domain: ${domain}, Client ID: ${clientId}`);
 
         // For Auth0 SPA SDK v2+, we need to use /oauth/token endpoint directly
         // This is not the recommended approach but is required for username/password flow
         const url = `https://${domain}/oauth/token`;
+        console.log(`Attempting to authenticate with ${url}`);
 
         const options = {
             method: 'POST',
@@ -468,15 +581,24 @@ export async function loginWithCredentials(username, password, clientSecret) {
                 // audience: `https://${domain}/api/v2/`
                 //audience: clientId
             })
-        };
-
-        const response = await fetch(url, options);
-        const data = await response.json();
+        };        console.log('Sending authentication request...');
+        let response, data;
+        try {
+            response = await fetch(url, options);
+            data = await response.json();
+            console.log('Response status:', response.status);
+        } catch (fetchError) {
+            console.error('Network error during authentication:', fetchError);
+            throw new Error(`Network error: ${fetchError.message}. This might be due to CORS restrictions, network connectivity, or an invalid domain.`);
+        }
 
         if (!response.ok) {
             console.error('Auth0 authentication error details:', data);
-            throw new Error(data.error_description || data.error || 'Authentication failed');
+            const errorMsg = data.error_description || data.error || 'Authentication failed';
+            console.error('Authentication error message:', errorMsg);
+            throw new Error(errorMsg);
         }
+        console.log('Authentication successful, received tokens');
 
         // Now get the user info
         const userInfoResponse = await fetch(`https://${domain}/userinfo`, {

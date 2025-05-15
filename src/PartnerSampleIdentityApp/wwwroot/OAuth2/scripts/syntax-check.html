@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Syntax Check</title>
+    <style>
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        pre { background-color: #f5f5f5; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Checking for syntax errors</h1>
+    <div id="error-container"></div>
+    <div id="function-list"></div>
+    
+    <script type="module">
+        try {
+            console.log("Loading login-handlers.js to check for syntax errors...");
+            import('./login-handlers.js')
+                .then(module => {
+                    document.getElementById('error-container').innerHTML = '<p class="success">No syntax errors found!</p>';
+                    console.log("Module loaded successfully:", module);
+                    
+                    // List available functions
+                    const functionList = document.getElementById('function-list');
+                    const functions = Object.keys(module).filter(key => typeof module[key] === 'function');
+                    functionList.innerHTML = `
+                        <h2>Available Functions:</h2>
+                        <pre>${functions.join('\n')}</pre>
+                        <p>Found ${functions.length} functions</p>
+                        
+                        <h3>Credential Login Function Test:</h3>
+                        <p>Is credentialsLogin available? <strong>${functions.includes('credentialsLogin') ? 'YES' : 'NO'}</strong></p>
+                    `;
+                })
+                .catch(error => {
+                    document.getElementById('error-container').innerHTML = `<p class="error">ERROR: ${error.message}</p>`;
+                    console.error("Error loading module:", error);
+                });
+        } catch (error) {
+            document.getElementById('error-container').innerHTML = `<p class="error">ERROR: ${error.message}</p>`;
+            console.error("Error during import:", error);
+        }
+    </script>
+</body>
+</html>

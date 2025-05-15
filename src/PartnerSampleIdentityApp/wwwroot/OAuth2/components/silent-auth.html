@@ -1,0 +1,22 @@
+﻿<div id="silentAuth-div" class="auth-section" style="border-top: 1px solid #ccc; margin-top: 20px; padding-top: 15px;">
+    <h3>Silent Authentication Testing</h3>
+    <p>Test silent authentication (prompt=none) to check for valid session</p>
+
+    <div class="button-container">
+        <button type="button" id="silentAuthButton">Try Silent Authentication</button>
+    </div>
+
+    <!-- Silent Auth Result will appear here -->
+    <div id="silentAuthResult"></div>
+
+    <div class="input-group" style="margin-top: 15px;">
+        <label for="pollingInterval">Session polling interval (ms):</label>
+        <input type="number" id="pollingInterval" value="900000" min="60000" />
+        <p class="note">Minimum recommended interval: 900000ms (15 minutes)</p>
+    </div>
+
+    <div class="button-container">
+        <button type="button" id="startPollingButton">Start Polling</button>
+        <button type="button" id="stopPollingButton">Stop Polling</button>
+    </div>
+</div>
