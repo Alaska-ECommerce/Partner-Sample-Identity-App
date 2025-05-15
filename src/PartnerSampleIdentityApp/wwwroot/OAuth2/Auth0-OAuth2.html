@@ -12,6 +12,118 @@
     <!-- SPA SDK -->
     <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
     <link rel="stylesheet" href="/css/Styles.css" />
+    <style>
+        /* Additional local styles */
+        .auth-section {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+            .auth-section h3 {
+                color: #0070c0;
+                margin-top: 0;
+                border-bottom: 1px solid #ddd;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+            .input-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: bold;
+            }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+            .button-container button {
+                background-color: #0070c0;
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+                .button-container button:hover {
+                    background-color: #005b9f;
+                }
+
+        .result-display {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        /* Add specific styling for JSON results */
+        .json-result {
+            text-align: left;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 14px;
+            line-height: 1.4;
+            tab-size: 2;
+            background-color: #f8f8f8;
+        }
+
+        .success-message {
+            background-color: #ebf7ed;
+            border-left: 4px solid #28a745;
+            padding: 10px 15px;
+        }
+
+            .success-message pre {
+                text-align: left;
+                margin-left: 0;
+                padding-left: 0;
+                font-family: monospace;
+                white-space: pre-wrap;
+                word-break: break-all;
+            }
+
+        .error-message {
+            background-color: #fbeced;
+            border-left: 4px solid #dc3545;
+            padding: 10px 15px;
+        }
+
+        .note {
+            font-size: 0.85em;
+            color: #666;
+            font-style: italic;
+            margin-top: 3px;
+        }
+
+        /* Result container styling */
+        .result-container {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+
+            .result-container h4 {
+                margin-top: 0;
+                margin-bottom: 10px;
+                color: #555;
+            }
+    </style>
+
     <script type="module" src="scripts/main.js"></script>
 </head>
 <body>
@@ -20,7 +132,7 @@
     <div class="flex-container">
         <div class="left">
             <a href="/">Home</a>
-            <a href="/SAML/OktaSaml.html">Saml Login</a>
+            <a href="/SAML/OktaSaml.html">SAML Login</a>
             <a href="/OAuth2/Auth0-OAuth2.html">OAuth2 Login</a>
         </div>
         <div class="centered-div">
@@ -29,83 +141,125 @@
         </div>
     </div>
 
-    <div>
-        <pre id="content-jwt" align="left">User Details will populate here after login</pre>
-    </div>
-    <hr />
-
-    <div>
-        <label for="authTypeSelector">Select Authentication Type:</label>
-        <select id="authTypeSelector">
-            <option value="spa">Single Page Application</option>
-            <option value="regular">Regular Web Application</option>
-            <option value="credentials">Username/Password Authentication</option>
-        </select>
+    <!-- User Information Display Section -->
+    <div class="auth-section">
+        <h3>User Information</h3>
+        <pre id="content-jwt" class="result-display">User Details will populate here after login</pre>
     </div>
 
-    <div id="oauthForm" class="auth-form">
+    <!-- Auth Type Selection Section -->
+    <div class="auth-section">
+        <h3>Authentication Configuration</h3>
+        <div class="input-group">
+            <label for="authTypeSelector">Select Authentication Type:</label>
+            <select id="authTypeSelector">
+                <option value="spa">Single Page Application</option>
+                <option value="regular">Regular Web Application</option>
+                <option value="credentials">Username/Password Authentication</option>
+            </select>
+        </div>
+
         <form id="oauthConfigForm">
-            <label for="oauthDomain">Enter OAuth domain URL:</label>
-            <input type="text" id="oauthDomain" name="oauthDomain" required size="50" />
-            <br />
-            <label for="oauthClientId">Enter OAuth client ID:</label>
-            <input type="text" id="oauthClientId" name="oauthClientId" required size="32" />
-            <br />
-            <label for="oauthRedirectUrl">Enter OAuth redirect URL:</label>
-            <input type="text" id="oauthRedirectUrl" name="oauthRedirectUrl" required size="50" />
-            <br />
-            <label for="appState">Enter App State:</label>
-            <input type="text" id="appState" name="appState" placeholder='Some App State.' size="50" />
-            <p class="note">App State is not the same as state. AppState doesn't leave the browser.</p>
-            <br />
-            <div id="returnedAppState-div">
-                <label for="returnedAppState">The Returned App State:</label>
+            <!-- OAuth Configuration Inputs -->
+            <div class="input-group">
+                <label for="oauthDomain">OAuth Domain URL:</label>
+                <input type="text" id="oauthDomain" name="oauthDomain" required size="50" />
+            </div>
+
+            <div class="input-group">
+                <label for="oauthClientId">OAuth Client ID:</label>
+                <input type="text" id="oauthClientId" name="oauthClientId" required size="32" />
+            </div>
+
+            <div class="input-group">
+                <label for="oauthRedirectUrl">OAuth Redirect URL:</label>
+                <input type="text" id="oauthRedirectUrl" name="oauthRedirectUrl" required size="50" />
+            </div>
+
+            <div class="input-group">
+                <label for="appState">Application State:</label>
+                <input type="text" id="appState" name="appState" placeholder='Some App State.' size="50" />
+                <p class="note">App State is not the same as state. AppState doesn't leave the browser.</p>
+            </div>
+
+            <div id="returnedAppState-div" class="input-group">
+                <label for="returnedAppState">Returned App State:</label>
                 <input type="text" id="returnedAppState" name="returnedAppState" size="50" readonly />
             </div>
 
-            <!-- Username/password section -->
-            <div id="credentials-section" style="display: none; margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px;">
-                <h3>Username/Password Authentication</h3>
-                <p class="note">Note: Resource Owner Password Grant must be enabled in your Auth0 application.</p>
-                <div>
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" name="username" required size="40" />
-                </div>
-                <br />
-                <div>
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required size="40" />
-                </div>
-                <br />
-                <div>
-                    <label for="clientSecret">Client Secret:</label>
-                    <input type="password" id="clientSecret" name="clientSecret" required size="40" />
-                    <p class="note">Client secret is required for Resource Owner Password Grant.</p>
-                </div>
-                <br />
-                <button type="button" id="credentialsLoginButton">Login with Username/Password</button>
-            </div>
-
-            <p><button type="button" id="loginButton">Login with Auth0</button></p>
-            <p><button type="button" id="logoutButton">Logout</button></p>
-            <div id="loginToAlaskaAir-div">
-                <p>www.alaskaair.com still uses login cookies. Guests are logged in with a token, but not with the cookies. Click below</p>
-                <p><button type="button" id="loginToAlaskaAirButton">Login to www.AlaskaAir.com</button></p>
-            </div>
-            <div id="silentAuth-div">
-                <hr />
-                <h3>Silent Authentication Testing</h3>
-                <p>Test silent authentication (prompt=none) to check for valid session</p>
-                <p><button type="button" id="silentAuthButton">Try Silent Authentication</button></p>
-                <p>
-                    <label for="pollingInterval">Session polling interval (ms):</label>
-                    <input type="number" id="pollingInterval" value="900000" min="60000" />
-                    <button type="button" id="startPollingButton">Start Polling</button>
-                    <button type="button" id="stopPollingButton">Stop Polling</button>
-                </p>
-                <p class="note">Minimum recommended interval: 900000ms (15 minutes)</p>
+            <!-- Primary Authentication Buttons -->
+            <div class="button-container">
+                <button type="button" id="loginButton">Login with Auth0</button>
+                <button type="button" id="logoutButton">Logout</button>
             </div>
         </form>
+    </div>
+
+    <!-- Username/Password Authentication Section -->
+    <div id="credentials-section" class="auth-section" style="display: none;">
+        <h3>Username/Password Authentication</h3>
+        <p class="note">Note: Resource Owner Password Grant must be enabled in your Auth0 application.</p>
+
+        <div class="input-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required size="40" />
+        </div>
+
+        <div class="input-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required size="40" />
+        </div>
+
+        <div class="input-group">
+            <label for="clientSecret">Client Secret:</label>
+            <input type="password" id="clientSecret" name="clientSecret" required size="40" />
+            <p class="note">Client secret is required for Resource Owner Password Grant.</p>
+        </div>
+
+        <div class="button-container">
+            <button type="button" id="credentialsLoginButton">Login with Username/Password</button>
+        </div>
+
+        <!-- Credentials Auth Result will appear here -->
+        <div class="result-container">
+            <h4>Authentication Result</h4>
+            <pre id="credentialsAuthResult" class="result-display json-result">No authentication performed yet</pre>
+        </div>
+    </div>
+
+
+
+    <!-- Alaska Air Login Section -->
+    <div id="loginToAlaskaAir-div" class="auth-section">
+        <h3>Alaska Air Login</h3>
+        <p>www.alaskaair.com still uses login cookies. Guests are logged in with a token, but not with the cookies.</p>
+        <div class="button-container">
+            <button type="button" id="loginToAlaskaAirButton">Login to www.AlaskaAir.com</button>
+        </div>
+    </div>
+
+    <!-- Silent Authentication Section -->
+    <div id="silentAuth-div" class="auth-section">
+        <h3>Silent Authentication Testing</h3>
+        <p>Test silent authentication (prompt=none) to check for valid session</p>
+
+        <div class="button-container">
+            <button type="button" id="silentAuthButton">Try Silent Authentication</button>
+        </div>
+
+        <!-- Silent Auth Result will appear here -->
+        <div id="silentAuthResult"></div>
+
+        <div class="input-group" style="margin-top: 15px;">
+            <label for="pollingInterval">Session polling interval (ms):</label>
+            <input type="number" id="pollingInterval" value="900000" min="60000" />
+            <p class="note">Minimum recommended interval: 900000ms (15 minutes)</p>
+        </div>
+
+        <div class="button-container">
+            <button type="button" id="startPollingButton">Start Polling</button>
+            <button type="button" id="stopPollingButton">Stop Polling</button>
+        </div>
     </div>
 
     <script>
@@ -201,10 +355,10 @@
 
             if (authType === 'credentials') {
                 credentialsSection.style.display = 'block';
-                loginButton.style.display = 'none';
+                loginButton.style.display = 'inline-block';
             } else {
                 credentialsSection.style.display = 'none';
-                loginButton.style.display = 'block';
+                loginButton.style.display = 'inline-block';
             }
         }
     </script>

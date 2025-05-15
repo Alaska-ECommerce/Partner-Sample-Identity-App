@@ -370,23 +370,41 @@ export async function credentialsLogin() {
                 const user = result.result?.user || result.result;
                 document.getElementById('content-jwt').textContent = JSON.stringify(user, null, 2);
 
-                // Create a success message
+                // Format JSON with proper indentation
+                const formattedJson = JSON.stringify(user, null, 2);
+
+                // Get or create the credentials result element
                 let resultElement = document.getElementById('credentialsAuthResult');
                 if (!resultElement) {
-                    resultElement = document.createElement('div');
-                    resultElement.id = 'credentialsAuthResult';
-                    const credentialsSection = document.getElementById('credentials-section') ||
-                        document.getElementById('silentAuth-div');
-                    credentialsSection.parentNode.insertBefore(resultElement, credentialsSection.nextSibling);
+                    // Check if we have a pre-defined container in the HTML
+                    const existingContainer = document.querySelector('#credentials-section .result-container');
+
+                    if (existingContainer) {
+                        resultElement = document.createElement('pre');
+                        resultElement.id = 'credentialsAuthResult';
+                        resultElement.className = 'result-display json-result';
+                        existingContainer.appendChild(resultElement);
+                    } else {
+                        // Create a new container if it doesn't exist
+                        const newContainer = document.createElement('div');
+                        newContainer.className = 'result-container';
+                        newContainer.innerHTML = `
+                            <h4>Authentication Result</h4>
+                            <pre id="credentialsAuthResult" class="result-display json-result"></pre>
+                        `;
+
+                        const credentialsSection = document.getElementById('credentials-section');
+                        if (credentialsSection) {
+                            credentialsSection.appendChild(newContainer);
+                            resultElement = newContainer.querySelector('#credentialsAuthResult');
+                        }
+                    }
                 }
 
-                resultElement.innerHTML = `
-                    <div class="success-message">
-                        <h4>Credential Authentication Successful</h4>
-                        <p>Successfully authenticated with username/password</p>
-                        <pre>${JSON.stringify(user, null, 2)}</pre>
-                    </div>
-                `;
+                // Update the result with well-formatted JSON
+                if (resultElement) {
+                    resultElement.textContent = formattedJson;
+                }
 
                 // Set logged in state
                 localStorage.setItem('isLoggedIn', 'true');
@@ -398,6 +416,12 @@ export async function credentialsLogin() {
                 }
             } else {
                 showError(`Login failed: ${result.errorDescription || result.error || 'Unknown error'}`);
+
+                // Also update the result area with the error
+                const resultElement = document.getElementById('credentialsAuthResult');
+                if (resultElement) {
+                    resultElement.textContent = `Authentication Error: ${result.errorDescription || result.error || 'Unknown error'}`;
+                }
             }
         } finally {
             // Restore button state
@@ -409,6 +433,7 @@ export async function credentialsLogin() {
         showError('Failed to authenticate with credentials. Please check your username and password.');
     }
 }
+
 
 /**
  * Performs authentication with username and password
