@@ -1,4 +1,5 @@
-﻿<div class="auth-section">
+﻿<!-- OAuth Authentication Config Section -->
+<div class="auth-section">
     <h3>Authentication Configuration</h3>
     <div class="input-group">
         <label for="authTypeSelector">Select Authentication Type:</label>
@@ -12,28 +13,28 @@
         <!-- OAuth Configuration Inputs -->
         <div class="input-group">
             <label for="oauthDomain">OAuth Domain URL:</label>
-            <input type="text" id="oauthDomain" name="oauthDomain" required size="50" />
+            <input type="text" id="oauthDomain" name="oauthDomain" required size="40" />
         </div>
 
         <div class="input-group">
             <label for="oauthClientId">OAuth Client ID:</label>
-            <input type="text" id="oauthClientId" name="oauthClientId" required size="32" />
+            <input type="text" id="oauthClientId" name="oauthClientId" required size="40" />
         </div>
 
         <div class="input-group">
             <label for="oauthRedirectUrl">OAuth Redirect URL:</label>
-            <input type="text" id="oauthRedirectUrl" name="oauthRedirectUrl" required size="50" />
+            <input type="text" id="oauthRedirectUrl" name="oauthRedirectUrl" required size="40" />
         </div>
 
         <div class="input-group">
             <label for="appState">Application State:</label>
-            <input type="text" id="appState" name="appState" placeholder='Some App State.' size="50" />
+            <input type="text" id="appState" name="appState" placeholder='Some App State.' size="40" />
             <p class="note">App State is not the same as state. AppState doesn't leave the browser.</p>
         </div>
 
         <div id="returnedAppState-div" class="input-group">
             <label for="returnedAppState">Returned App State:</label>
-            <input type="text" id="returnedAppState" name="returnedAppState" size="50" readonly />
+            <input type="text" id="returnedAppState" name="returnedAppState" size="40" readonly />
         </div>
 
         <!-- Primary Authentication Buttons -->
