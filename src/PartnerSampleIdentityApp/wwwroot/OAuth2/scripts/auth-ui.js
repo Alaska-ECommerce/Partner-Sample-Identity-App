@@ -3,6 +3,12 @@ import { selectAuthType } from './login-handlers.js';
 import { loadTemplate, loadTemplateSync } from './template-loader.js';
 
 export function initializeStateManagement(getCurrentEnvironment, getEnvironments, setEnvironment, getDomain, getClientId, getType) {
+    // Check if an environment selector already exists
+    if (document.querySelector('.environment-selector')) {
+        console.log('Environment selector already exists, not creating a new one');
+        return;
+    }
+    
     // Create environment selector
     const stateSelector = document.createElement('div');
     stateSelector.className = 'environment-selector';
@@ -28,9 +34,11 @@ export function initializeStateManagement(getCurrentEnvironment, getEnvironments
             `;
         });
 
-    // Insert before the first form
-    const firstForm = document.querySelector('form');
-    firstForm.parentNode.insertBefore(stateSelector, firstForm);
+    // Insert into the dedicated environment selector container
+    const selectorContainer = document.getElementById('environment-selector-container');
+    if (selectorContainer) {
+        selectorContainer.appendChild(stateSelector);
+    }
 
     // Trigger environment change to set initial values
     window.handleEnvironmentChange(currentEnv);

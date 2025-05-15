@@ -9,6 +9,29 @@
     height: 100%; /* Make sure the section fills its container */
 }
 
+/* Environment selector styling */
+.environment-selector {
+    display: inline-block;
+    background-color: #f0f0f0;
+    padding: 8px 15px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    margin-bottom: 15px;
+}
+
+.environment-selector select {
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.environment-selector label {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
 /* 50/50 split container styles */
 .split-container {
     display: flex;

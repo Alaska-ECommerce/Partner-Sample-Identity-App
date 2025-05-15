@@ -1,5 +1,5 @@
 /**
- * Tests the connection to Auth0 to validate configuration
+ * Tests the connection to Auth0 for SPA applications
  * @param {string} domain - Auth0 domain
  * @param {string} clientId - Auth0 client ID
  * @returns {Promise<Object>} Test result

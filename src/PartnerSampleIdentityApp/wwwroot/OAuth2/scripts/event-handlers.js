@@ -241,16 +241,15 @@ function setupButtonHandlers(handlers) {
             }, 10); // Small delay to ensure UI updates first
         });
     }
-    
-    // Test connection button
+      // Test connection button
     const credentialsTestButton = document.getElementById('credentialsTestButton');
     if (credentialsTestButton) {
         credentialsTestButton.addEventListener('click', async function() {
             // Get connection details
             const domain = document.getElementById('oauthDomain').value;
             const clientId = document.getElementById('oauthClientId').value;
-            const clientSecret = document.getElementById('clientSecret').value;
-              // Show testing indicator
+            
+            // Show testing indicator
             const resultElement = document.getElementById('credentialsAuthResult');
             if (resultElement) {
                 loadTemplate('testing-connection')
@@ -268,15 +267,15 @@ function setupButtonHandlers(handlers) {
                     });
             }
             
-            try {
-                // Import the test function
-                const { testAuth0Connection } = await import('./auth0-test.js');
+            try {                // Import the test function for SPA
+                const { testAuth0Connection } = await import('./auth0-test-spa.js');
                 
-                // Run the test
-                const testResult = await testAuth0Connection(domain, clientId, clientSecret);
+                // Run the test (without client secret)
+                const testResult = await testAuth0Connection(domain, clientId);
                 
                 // Display result
-                if (resultElement) {                    if (testResult.success) {
+                if (resultElement) {
+                    if (testResult.success) {
                         loadTemplate('connection-success', {
                             domain: testResult.details.domain,
                             clientId: `${clientId.substring(0, 3)}...${clientId.substring(clientId.length - 3)}`,
@@ -298,7 +297,8 @@ function setupButtonHandlers(handlers) {
                                 </div>
                             </div>
                             `;
-                        });                    } else {
+                        });
+                    } else {
                         // Load connection error template
                         loadTemplate('connection-error', {
                             errorMessage: testResult.message + 
@@ -327,7 +327,8 @@ function setupButtonHandlers(handlers) {
                                     <li>Verify your client ID is correct</li>
                                     <li>Ensure the client secret is correct</li>
                                     <li>Make sure your internet connection is working</li>
-                                </ul>                            </div>
+                                </ul>
+                            </div>
                             `;
                         });
                     }
