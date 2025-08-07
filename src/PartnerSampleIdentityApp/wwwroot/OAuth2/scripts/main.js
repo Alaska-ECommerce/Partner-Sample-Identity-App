@@ -6,7 +6,8 @@ import {
     getDomain,
     getType,
     getCurrentEnvironment,
-    getEnvironments
+    getEnvironments,
+    getAudience
 } from '/Config/auth-config.js';
 
 import { initializeClients, getRedirectUri } from './auth-client.js';
@@ -16,7 +17,7 @@ import { handleSpaAuthResponse, handleRegularAuthResponse } from './response-han
 
 // Setup global handlers
 window.handleEnvironmentChange = (newEnv) => {
-    handleEnvironmentChange(newEnv, setEnvironment, getDomain, getClientId, getType, getCurrentEnvironment);
+    handleEnvironmentChange(newEnv, setEnvironment, getDomain, getClientId, getType, getCurrentEnvironment, getAudience);
 };
 window.login = login;
 window.logout = logout;
@@ -35,7 +36,7 @@ document.addEventListener('componentsLoaded', async () => {
         const config = getCurrentConfig();
 
         // Initialize state management
-        initializeStateManagement(getCurrentEnvironment, getEnvironments, setEnvironment, getDomain, getClientId, getType);
+        initializeStateManagement(getCurrentEnvironment, getEnvironments, setEnvironment, getDomain, getClientId, getType, getAudience);
 
         const domain = getDomain();
         const clientId = getClientId();
@@ -49,6 +50,8 @@ document.addEventListener('componentsLoaded', async () => {
             el.value = getDomain());
         document.querySelectorAll('[id$="oauthClientId"]').forEach(el =>
             el.value = getClientId());
+        document.querySelectorAll('[id$="audience"]').forEach(el =>
+            el.value = getAudience());
         document.querySelectorAll('[id$="oauthRedirectUrl"]').forEach(el =>
             el.value = initRedirectUri);
 

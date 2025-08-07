@@ -4,21 +4,25 @@ const AUTH_CONFIG = {
     prod: {
         domain: "auth0.alaskaair.com",
         clientId: "YdmrhDsA5Q4yQwWUE9oIn5DAFKQajVF2",
+        audience: "https://apis.alaskaair.com",
         type: "spa"
     },
     qa: {
         domain: "auth0-qa.alaskaair.com",
         clientId: "Z44PoNZwqGlkByWjEZA5wXfYa1yiAZOZ",
+        audience: "https://apis.qa.alaskaair.com",
         type: "spa"
     },
     test: {
         domain: "auth0-test.alaskaair.com",
         clientId: "MvnAHImPPNtD4aB5dYRLFnSMQKzkdhFl",
+        audience: "https://apis.test.alaskaair.com",
         type: "spa"
     },
     jit_poc: {
         domain: "alaska-jit-migration-poc.us.auth0.com",
         clientId: "p4whmNYolSoHtjcyuhHIYfLWpuAVY315",
+        audience: "testcert.alaskaair.com",
         type: "regular"
     }
 };
@@ -48,6 +52,8 @@ const getClientId = () => getCurrentConfig().clientId;
 
 const getDomain = () => getCurrentConfig().domain;
 
+const getAudience = () => getCurrentConfig().audience;
+
 const getType = () => getCurrentConfig().type;
 
 const getActionUrl = (type = 'oauth') => {
@@ -66,6 +72,7 @@ export {
     getCurrentEnvironment,
     setEnvironment,
     getClientId,
+    getAudience,
     getDomain,
     getType,
     getActionUrl,
