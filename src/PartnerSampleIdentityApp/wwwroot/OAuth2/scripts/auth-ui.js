@@ -2,7 +2,7 @@
 import { selectAuthType } from './login-handlers.js';
 import { loadTemplate, loadTemplateSync } from './template-loader.js';
 
-export function initializeStateManagement(getCurrentEnvironment, getEnvironments, setEnvironment, getDomain, getClientId, getType) {
+export function initializeStateManagement(getCurrentEnvironment, getEnvironments, setEnvironment, getDomain, getClientId, getType, getAudience) {
     // Check if an environment selector already exists
     if (document.querySelector('.environment-selector')) {
         console.log('Environment selector already exists, not creating a new one');
@@ -44,7 +44,7 @@ export function initializeStateManagement(getCurrentEnvironment, getEnvironments
     window.handleEnvironmentChange(currentEnv);
 }
 
-export function handleEnvironmentChange(newEnv, setEnvironment, getDomain, getClientId, getType, getCurrentEnvironment) {
+export function handleEnvironmentChange(newEnv, setEnvironment, getDomain, getClientId, getType, getCurrentEnvironment, getAudience) {
     try {
         setEnvironment(newEnv);
         // Update form fields with new environment values
@@ -52,6 +52,8 @@ export function handleEnvironmentChange(newEnv, setEnvironment, getDomain, getCl
             el.value = getDomain());
         document.querySelectorAll('[id$="oauthClientId"]').forEach(el =>
             el.value = getClientId());
+        document.querySelectorAll('[id$="audience"]').forEach(el =>
+            el.value = getAudience());
         let type = getType();
         selectAuthType(type);
     } catch (error) {

@@ -11,7 +11,8 @@ function getAuthConfig() {
     return {
         domain: document.getElementById('oauthDomain').value,
         clientId: document.getElementById('oauthClientId').value,
-        redirectUri: document.getElementById('oauthRedirectUrl').value
+        redirectUri: document.getElementById('oauthRedirectUrl').value,
+        audience: document.getElementById('audience').value,
     };
 }
 
@@ -53,12 +54,13 @@ export async function spaLogin() {
  * @returns {Object} Initialized SPA client
  */
 async function createSpaClient(config) {
-    const { domain, clientId, redirectUri } = config;
+    const { domain, clientId, redirectUri, audience } = config;
     
     const spaClient = await auth0.createAuth0Client({
         domain,
         clientId,
         authorizationParams: {
+            audience,
             redirect_uri: redirectUri
         }
     });
@@ -69,8 +71,8 @@ async function createSpaClient(config) {
 
 export async function regularLogin() {
     try {
-        const { domain, clientId, redirectUri } = getAuthConfig();
-        const webClient = createWebClient(domain, clientId, redirectUri);
+        const { domain, clientId, redirectUri, audience } = getAuthConfig();
+        const webClient = createWebClient(domain, clientId, redirectUri, audience);
         webClient.authorize();
     } catch (error) {
         console.error('Regular login error:', error);
@@ -83,13 +85,15 @@ export async function regularLogin() {
  * @param {string} domain - Auth0 domain
  * @param {string} clientId - Auth0 client ID
  * @param {string} redirectUri - Redirect URI
+ * @param {string} audience - Audience for the API
  * @returns {Object} Web Auth client
  */
-function createWebClient(domain, clientId, redirectUri) {
+function createWebClient(domain, clientId, redirectUri, audience) {
     const webClient = new Auth0WebAuth({
         domain,
         clientID: clientId,
         redirectUri,
+        audience,
         responseType: 'token id_token',
         scope: 'openid profile email'
     });
@@ -220,15 +224,16 @@ async function tryStoredTokenAuth(domain) {
  * @returns {Promise<Object>} Authentication result
  */
 async function performSpaSilentAuth(config) {
-    const { domain, clientId, redirectUri } = config;
+    const { domain, clientId, redirectUri, audience } = config;
     
     const spaClient = await auth0.createAuth0Client({
         domain,
         clientId,
         authorizationParams: {
-            redirect_uri: redirectUri
+            redirect_uri: redirectUri,
+            audience
         },
-        cacheLocation: 'localStorage' // Explicitly set cache location
+        cacheLocation: 'localstorage' // Explicitly set cache location
     });
 
     updateClients(spaClient, null);
@@ -237,7 +242,8 @@ async function performSpaSilentAuth(config) {
         // Try to get a token silently - this will succeed only if the user has a valid SSO session
         const token = await spaClient.getTokenSilently({
             authorizationParams: {
-                scope: 'openid profile email'
+                scope: 'openid profile email',
+                audience
             },
             timeoutInSeconds: 10 // Add timeout to avoid hanging
         });
@@ -265,12 +271,13 @@ async function performSpaSilentAuth(config) {
  * @returns {Promise<Object>} Authentication result
  */
 async function performRegularSilentAuth(config) {
-    const { domain, clientId, redirectUri } = config;
+    const { domain, clientId, redirectUri, audience } = config;
     
     const webClient = new Auth0WebAuth({
         domain,
         clientID: clientId,
         redirectUri,
+        audience,
         responseType: 'token id_token',
         scope: 'openid profile email'
     });
